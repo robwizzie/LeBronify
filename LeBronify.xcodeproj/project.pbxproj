@@ -1,0 +1,708 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		B2C5C7B82D94CCB600BAE769 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B2C5C79F2D94CCB100BAE769 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B2C5C7A62D94CCB100BAE769;
+			remoteInfo = Lebronify;
+		};
+		B2C5C7C22D94CCB600BAE769 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B2C5C79F2D94CCB100BAE769 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B2C5C7A62D94CCB100BAE769;
+			remoteInfo = Lebronify;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		B2C5C7A72D94CCB100BAE769 /* LeBronify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeBronify.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B2C5C7B72D94CCB600BAE769 /* LeBronifyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LeBronifyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B2C5C7C12D94CCB600BAE769 /* LeBronifyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LeBronifyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B2C5C8252D94DE8100BAE769 /* Exceptions for "LeBronify" folder in "LeBronify" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppDelegate.swift,
+				Assets.xcassets,
+				ContentView.swift,
+				LeBronifyApp.swift,
+				Models/DataManager.swift,
+				Models/Song.swift,
+				Models/SongManager.swift,
+				"Songs/Ain't It Bron - hen.bouselog.mp3",
+				"Songs/All LeBron Things - jeremytache.mp3",
+				"Songs/Bring Me Back To Bron.mp3",
+				"Songs/Bron Royalty - ilyaugust.mp3",
+				"Songs/Bronpeii - ilyaugust.mp3",
+				"Songs/Brons Not Brongedies - ilyaugust.mp3",
+				"Songs/Brontastic - ilyaugust.mp3",
+				"Songs/Catch a LeNade For You - ilyaugust.mp3",
+				"Songs/Dear LeBron - sdotreidy.mp3",
+				"Songs/Dunk With a Smile.mp3",
+				"Songs/He Is Lebron James - My Way.mp3",
+				"Songs/He is The King.mp3",
+				"Songs/I Believe in LeBron - imakeparodyzz.mp3",
+				"Songs/I Glazed LeBron (And I Liked It) - timringling.mp3",
+				"Songs/I'm Like That's Bron - ilyaugust.mp3",
+				"Songs/In The Bron - ilyaugust.mp3",
+				"Songs/La Bron Bron Land - House of Highlights.mp3",
+				"Songs/Le Bronba - enrique_l_garibay.mp3",
+				"Songs/LeAfrica - standleyjohnsonmusic.mp3",
+				"Songs/LeAll of Me - musicbykidb.mp3",
+				"Songs/LeBron Has Taken a Toll - ilyaugust.mp3",
+				"Songs/LeBron That I Used to Know.mp3",
+				"Songs/LeBron, LeBron, LeBron.mp3",
+				"Songs/LeBronifornia Girls - izzydrip.mp3",
+				"Songs/LeBrons Wide Open - timringling.mp3",
+				"Songs/LeCurious James - leiheart.radio.station.mp3",
+				"Songs/LeEarned It - kai.so.mp3",
+				"Songs/LeGolden Hour - ilyaugust.mp3",
+				"Songs/LeHips Don't Lie - ant.jr06.mp3",
+				"Songs/LeLove Yourself - musicbykidb.mp3",
+				"Songs/LeStiches - ilyaugust.mp3",
+				"Songs/Let LeBron Know.mp3",
+				"Songs/Life is a LeHighway - jeppreyjung.mp3",
+				"Songs/Man On The Lakers - Talented Blake.mp3",
+				"Songs/Marry Bron - ilyaugust.mp3",
+				"Songs/No Bron - ilyaugust.mp3",
+				"Songs/Not Like Bron - vonpierreofficial.mp3",
+				"Songs/Oh Mr LeBron.mp3",
+				"Songs/Romantic Bronicide - ilyaugust.mp3",
+				"Songs/Shut Up and Dance With Bron - ilyaugust.mp3",
+				"Songs/Still Glazing You - musicbykidb.mp3",
+				"Songs/Sweet LeScape - ilyaugust.mp3",
+				"Songs/Taco Tuesday.mp3",
+				"Songs/That's Bron - JJ Darrow.mp3",
+				"Songs/That's What Makes Bron Beautiful - ilyaugust.mp3",
+				"Songs/Thinkin Bout LeBron - ilyaugust.mp3",
+				"Songs/This is The Bron - fanoftatum0.mp3",
+				"Songs/Towards The Bron - ilyaugust.mp3",
+				"Songs/You Are My Sunshine.mp3",
+				SplashScreen.swift,
+				Utilities/AlbumArtHelper.swift,
+				Utilities/AppIconManager.swift,
+				Utilities/AudioPlaybackManager.swift,
+				Utilities/CarPlaySceneDelegate.swift,
+				Utilities/QueueButton.swift,
+				Utilities/QueueManager.swift,
+				Utilities/TacoTuesdayManager.swift,
+				Utilities/UIComponents.swift,
+				ViewModels/LeBronifyViewModel.swift,
+				Views/HomeView.swift,
+				Views/LibraryView.swift,
+				Views/PlayerView.swift,
+				Views/QueueView.swift,
+			);
+			target = B2C5C7A62D94CCB100BAE769 /* LeBronify */;
+		};
+		B2C5C8A82D94DF1300BAE769 /* Exceptions for "LeBronify" folder in "LeBronifyUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppDelegate.swift,
+				Info.plist,
+				"Songs/Ain't It Bron - hen.bouselog.mp3",
+				"Songs/All LeBron Things - jeremytache.mp3",
+				"Songs/Bring Me Back To Bron.mp3",
+				"Songs/Bron Royalty - ilyaugust.mp3",
+				"Songs/Bronpeii - ilyaugust.mp3",
+				"Songs/Brons Not Brongedies - ilyaugust.mp3",
+				"Songs/Brontastic - ilyaugust.mp3",
+				"Songs/Catch a LeNade For You - ilyaugust.mp3",
+				"Songs/Dear LeBron - sdotreidy.mp3",
+				"Songs/Dunk With a Smile.mp3",
+				"Songs/He Is Lebron James - My Way.mp3",
+				"Songs/He is The King.mp3",
+				"Songs/I Believe in LeBron - imakeparodyzz.mp3",
+				"Songs/I Glazed LeBron (And I Liked It) - timringling.mp3",
+				"Songs/I'm Like That's Bron - ilyaugust.mp3",
+				"Songs/In The Bron - ilyaugust.mp3",
+				"Songs/La Bron Bron Land - House of Highlights.mp3",
+				"Songs/Le Bronba - enrique_l_garibay.mp3",
+				"Songs/LeAfrica - standleyjohnsonmusic.mp3",
+				"Songs/LeAll of Me - musicbykidb.mp3",
+				"Songs/LeBron Has Taken a Toll - ilyaugust.mp3",
+				"Songs/LeBron That I Used to Know.mp3",
+				"Songs/LeBron, LeBron, LeBron.mp3",
+				"Songs/LeBronifornia Girls - izzydrip.mp3",
+				"Songs/LeBrons Wide Open - timringling.mp3",
+				"Songs/LeCurious James - leiheart.radio.station.mp3",
+				"Songs/LeEarned It - kai.so.mp3",
+				"Songs/LeGolden Hour - ilyaugust.mp3",
+				"Songs/LeHips Don't Lie - ant.jr06.mp3",
+				"Songs/LeLove Yourself - musicbykidb.mp3",
+				"Songs/LeStiches - ilyaugust.mp3",
+				"Songs/Let LeBron Know.mp3",
+				"Songs/Life is a LeHighway - jeppreyjung.mp3",
+				"Songs/Man On The Lakers - Talented Blake.mp3",
+				"Songs/Marry Bron - ilyaugust.mp3",
+				"Songs/No Bron - ilyaugust.mp3",
+				"Songs/Not Like Bron - vonpierreofficial.mp3",
+				"Songs/Oh Mr LeBron.mp3",
+				"Songs/Romantic Bronicide - ilyaugust.mp3",
+				"Songs/Shut Up and Dance With Bron - ilyaugust.mp3",
+				"Songs/Still Glazing You - musicbykidb.mp3",
+				"Songs/Sweet LeScape - ilyaugust.mp3",
+				"Songs/Taco Tuesday.mp3",
+				"Songs/That's Bron - JJ Darrow.mp3",
+				"Songs/That's What Makes Bron Beautiful - ilyaugust.mp3",
+				"Songs/Thinkin Bout LeBron - ilyaugust.mp3",
+				"Songs/This is The Bron - fanoftatum0.mp3",
+				"Songs/Towards The Bron - ilyaugust.mp3",
+				"Songs/You Are My Sunshine.mp3",
+				Utilities/AlbumArtHelper.swift,
+				Utilities/AppIconManager.swift,
+				Utilities/AudioPlaybackManager.swift,
+				Utilities/CarPlaySceneDelegate.swift,
+				Utilities/QueueButton.swift,
+				Utilities/QueueManager.swift,
+				Utilities/TacoTuesdayManager.swift,
+				Utilities/UIComponents.swift,
+				Views/QueueView.swift,
+			);
+			target = B2C5C7C02D94CCB600BAE769 /* LeBronifyUITests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		B2C5C7BA2D94CCB600BAE769 /* LeBronifyTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LeBronifyTests;
+			sourceTree = "<group>";
+		};
+		B2C5C7C42D94CCB600BAE769 /* LeBronifyUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LeBronifyUITests;
+			sourceTree = "<group>";
+		};
+		B2C5C81A2D94DE8100BAE769 /* LeBronify */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B2C5C8252D94DE8100BAE769 /* Exceptions for "LeBronify" folder in "LeBronify" target */,
+				B2C5C8A82D94DF1300BAE769 /* Exceptions for "LeBronify" folder in "LeBronifyUITests" target */,
+			);
+			path = LeBronify;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B2C5C7A42D94CCB100BAE769 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B2C5C7B42D94CCB600BAE769 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B2C5C7BE2D94CCB600BAE769 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		B2C5C79E2D94CCB100BAE769 = {
+			isa = PBXGroup;
+			children = (
+				B2C5C81A2D94DE8100BAE769 /* LeBronify */,
+				B2C5C7BA2D94CCB600BAE769 /* LeBronifyTests */,
+				B2C5C7C42D94CCB600BAE769 /* LeBronifyUITests */,
+				B2C5C7A82D94CCB100BAE769 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B2C5C7A82D94CCB100BAE769 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B2C5C7A72D94CCB100BAE769 /* LeBronify.app */,
+				B2C5C7B72D94CCB600BAE769 /* LeBronifyTests.xctest */,
+				B2C5C7C12D94CCB600BAE769 /* LeBronifyUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B2C5C7A62D94CCB100BAE769 /* LeBronify */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B2C5C7CB2D94CCB600BAE769 /* Build configuration list for PBXNativeTarget "LeBronify" */;
+			buildPhases = (
+				B2C5C7A32D94CCB100BAE769 /* Sources */,
+				B2C5C7A42D94CCB100BAE769 /* Frameworks */,
+				B2C5C7A52D94CCB100BAE769 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LeBronify;
+			packageProductDependencies = (
+			);
+			productName = Lebronify;
+			productReference = B2C5C7A72D94CCB100BAE769 /* LeBronify.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B2C5C7B62D94CCB600BAE769 /* LeBronifyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B2C5C7CE2D94CCB600BAE769 /* Build configuration list for PBXNativeTarget "LeBronifyTests" */;
+			buildPhases = (
+				B2C5C7B32D94CCB600BAE769 /* Sources */,
+				B2C5C7B42D94CCB600BAE769 /* Frameworks */,
+				B2C5C7B52D94CCB600BAE769 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B2C5C7B92D94CCB600BAE769 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B2C5C7BA2D94CCB600BAE769 /* LeBronifyTests */,
+			);
+			name = LeBronifyTests;
+			packageProductDependencies = (
+			);
+			productName = LebronifyTests;
+			productReference = B2C5C7B72D94CCB600BAE769 /* LeBronifyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B2C5C7C02D94CCB600BAE769 /* LeBronifyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B2C5C7D12D94CCB600BAE769 /* Build configuration list for PBXNativeTarget "LeBronifyUITests" */;
+			buildPhases = (
+				B2C5C7BD2D94CCB600BAE769 /* Sources */,
+				B2C5C7BE2D94CCB600BAE769 /* Frameworks */,
+				B2C5C7BF2D94CCB600BAE769 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B2C5C7C32D94CCB600BAE769 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B2C5C7C42D94CCB600BAE769 /* LeBronifyUITests */,
+				B2C5C81A2D94DE8100BAE769 /* LeBronify */,
+			);
+			name = LeBronifyUITests;
+			packageProductDependencies = (
+			);
+			productName = LebronifyUITests;
+			productReference = B2C5C7C12D94CCB600BAE769 /* LeBronifyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B2C5C79F2D94CCB100BAE769 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1620;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					B2C5C7A62D94CCB100BAE769 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					B2C5C7B62D94CCB600BAE769 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = B2C5C7A62D94CCB100BAE769;
+					};
+					B2C5C7C02D94CCB600BAE769 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = B2C5C7A62D94CCB100BAE769;
+					};
+				};
+			};
+			buildConfigurationList = B2C5C7A22D94CCB100BAE769 /* Build configuration list for PBXProject "LeBronify" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = B2C5C79E2D94CCB100BAE769;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B2C5C7A82D94CCB100BAE769 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B2C5C7A62D94CCB100BAE769 /* LeBronify */,
+				B2C5C7B62D94CCB600BAE769 /* LeBronifyTests */,
+				B2C5C7C02D94CCB600BAE769 /* LeBronifyUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B2C5C7A52D94CCB100BAE769 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B2C5C7B52D94CCB600BAE769 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B2C5C7BF2D94CCB600BAE769 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B2C5C7A32D94CCB100BAE769 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B2C5C7B32D94CCB600BAE769 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B2C5C7BD2D94CCB600BAE769 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B2C5C7B92D94CCB600BAE769 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B2C5C7A62D94CCB100BAE769 /* LeBronify */;
+			targetProxy = B2C5C7B82D94CCB600BAE769 /* PBXContainerItemProxy */;
+		};
+		B2C5C7C32D94CCB600BAE769 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B2C5C7A62D94CCB100BAE769 /* LeBronify */;
+			targetProxy = B2C5C7C22D94CCB600BAE769 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		B2C5C7C92D94CCB600BAE769 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B2C5C7CA2D94CCB600BAE769 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B2C5C7CC2D94CCB600BAE769 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 29256KAL2X;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LeBronify/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.robertwiscount.Lebronify;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B2C5C7CD2D94CCB600BAE769 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 29256KAL2X;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LeBronify/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.robertwiscount.Lebronify;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B2C5C7CF2D94CCB600BAE769 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.robertwiscount.LebronifyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LeBronify.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LeBronify";
+			};
+			name = Debug;
+		};
+		B2C5C7D02D94CCB600BAE769 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.robertwiscount.LebronifyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LeBronify.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LeBronify";
+			};
+			name = Release;
+		};
+		B2C5C7D22D94CCB600BAE769 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.robertwiscount.LebronifyUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Lebronify;
+			};
+			name = Debug;
+		};
+		B2C5C7D32D94CCB600BAE769 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.robertwiscount.LebronifyUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Lebronify;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B2C5C7A22D94CCB100BAE769 /* Build configuration list for PBXProject "LeBronify" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B2C5C7C92D94CCB600BAE769 /* Debug */,
+				B2C5C7CA2D94CCB600BAE769 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B2C5C7CB2D94CCB600BAE769 /* Build configuration list for PBXNativeTarget "LeBronify" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B2C5C7CC2D94CCB600BAE769 /* Debug */,
+				B2C5C7CD2D94CCB600BAE769 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B2C5C7CE2D94CCB600BAE769 /* Build configuration list for PBXNativeTarget "LeBronifyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B2C5C7CF2D94CCB600BAE769 /* Debug */,
+				B2C5C7D02D94CCB600BAE769 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B2C5C7D12D94CCB600BAE769 /* Build configuration list for PBXNativeTarget "LeBronifyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B2C5C7D22D94CCB600BAE769 /* Debug */,
+				B2C5C7D32D94CCB600BAE769 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B2C5C79F2D94CCB100BAE769 /* Project object */;
+}
