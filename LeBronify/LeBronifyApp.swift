@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 @main
 struct LeBronifyApp: App {
@@ -7,6 +8,14 @@ struct LeBronifyApp: App {
     
     // Use the shared viewModel instance
     @StateObject private var viewModel = LeBronifyApp.viewModel
+    
+    // Add the app delegate
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
+    init() {
+        // Register for background notifications on init
+        setupAppForWidgetInteraction()
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -22,6 +31,34 @@ struct LeBronifyApp: App {
                         }
                     }
                 }
+        }
+    }
+    
+    // Setup app to handle widget interactions
+    private func setupAppForWidgetInteraction() {
+        // Listen for local notifications from widgets
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("WidgetPlayPauseTapped"),
+            object: nil, 
+            queue: .main
+        ) { _ in
+            viewModel.togglePlayPause()
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("WidgetPreviousTapped"),
+            object: nil, 
+            queue: .main
+        ) { _ in
+            viewModel.previousSong()
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("WidgetNextTapped"),
+            object: nil, 
+            queue: .main
+        ) { _ in
+            viewModel.nextSong()
         }
     }
 }

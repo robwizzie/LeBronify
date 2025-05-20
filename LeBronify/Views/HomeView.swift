@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
@@ -15,6 +16,7 @@ struct HomeView: View {
     @State private var showTacoRain = false
     @State private var shouldShowInitialTacos = true
     @State private var tacoObserver: NSObjectProtocol? = nil
+    @State private var playCountObserver: NSObjectProtocol? = nil
     
     var body: some View {
         ZStack {
@@ -110,11 +112,8 @@ struct HomeView: View {
             setupTacoNotifications()
         }
         .onDisappear {
-            // Clean up notification observer
-            if let observer = tacoObserver {
-                NotificationCenter.default.removeObserver(observer)
-                tacoObserver = nil
-            }
+            // Clean up notification observers
+            cleanupObservers()
         }
     }
     
@@ -141,6 +140,41 @@ struct HomeView: View {
                     self.showTacoRain = false
                 }
             }
+        }
+        
+        // Setup observer for play count updates
+        playCountObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PlayCountUpdated"),
+            object: nil,
+            queue: .main
+        ) { notification in
+            print("HomeView: Received play count update notification")
+            
+            // When a play count is updated, we need to refresh the dynamic playlists
+            // which show songs based on play count
+            DispatchQueue.main.async {
+                // Make sure we get the latest data
+                self.viewModel.refreshDynamicPlaylists()
+                
+                // Force UI refresh for any song rows showing play counts
+                if let userInfo = notification.userInfo,
+                   let songID = userInfo["songID"] as? UUID {
+                    print("HomeView: Refreshing UI for song with ID: \(songID)")
+                }
+            }
+        }
+    }
+    
+    // Cleanup both observers when view disappears
+    private func cleanupObservers() {
+        if let observer = tacoObserver {
+            NotificationCenter.default.removeObserver(observer)
+            tacoObserver = nil
+        }
+        
+        if let observer = playCountObserver {
+            NotificationCenter.default.removeObserver(observer)
+            playCountObserver = nil
         }
     }
     
@@ -313,25 +347,41 @@ struct SongOfDaySection: View {
 struct PlaylistsSection: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
     @Binding var selectedTab: Int
+    @State private var showingAddPlaylist = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Playlists")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding(.horizontal)
+            HStack {
+                Text("Playlists")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Spacer()
+                
+                Button(action: {
+                    showingAddPlaylist = true
+                }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                        Text("New")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.blue)
+                }
+            }
+            .padding(.horizontal)
+            
+            // Separate user playlists from system playlists
+            let userPlaylists = viewModel.playlists.filter { !$0.isSystem }
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
-                    // Show all playlists instead of filtering
-                    ForEach(viewModel.playlists) { playlist in
+                    // Only show user-created playlists here 
+                    ForEach(userPlaylists) { playlist in
                         NavigationLink(destination: PlaylistDetailView(playlist: playlist, selectedTab: $selectedTab)) {
                             VStack(alignment: .leading) {
-                                Image(playlist.coverImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 150, height: 150)
-                                    .cornerRadius(8)
+                                // Use the helper to get the appropriate image view
+                                playlist.getImageView(size: 150)
                                 
                                 Text(playlist.name)
                                     .font(.headline)
@@ -342,6 +392,11 @@ struct PlaylistsSection: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                     .lineLimit(1)
+                                
+                                // Show song count
+                                Text("\(viewModel.getSongs(for: playlist).count) songs")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
                             .frame(width: 150)
                         }
@@ -350,6 +405,10 @@ struct PlaylistsSection: View {
                 .padding(.horizontal)
                 .padding(.bottom, 8)
             }
+        }
+        .sheet(isPresented: $showingAddPlaylist) {
+            PlaylistEditorViewWrapper()
+                .environmentObject(viewModel)
         }
     }
 }

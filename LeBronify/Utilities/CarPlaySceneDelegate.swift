@@ -26,29 +26,37 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         
         // Set up initial root template
         let rootTemplate = createRootTemplate()
-        interfaceController.setRootTemplate(rootTemplate, animated: true)
         
-        // Set up the audio session
-        setupAudioSession()
+        // Use the modern API for presenting templates
+        if #available(iOS 14.0, *) {
+            interfaceController.setRootTemplate(rootTemplate, animated: true, completion: nil)
+        } else {
+            // Fallback for older iOS versions
+            interfaceController.presentTemplate(rootTemplate, animated: true)
+        }
+        
+        // Don't set up the audio session here
+        // It will be initialized on-demand when needed by AudioPlaybackManager
         
         // Start observing for song changes to update the UI
         startObservingSongChanges()
     }
     
-    func templateApplicationScene(_ templateApplicationScene: CPTemplateApplicationScene,
-                                didDisconnect interfaceController: CPInterfaceController) {
-        self.interfaceController = nil
-        NotificationCenter.default.removeObserver(self)
-    }
-    
     // MARK: - Template Creation
     
     private func createRootTemplate() -> CPTemplate {
+        // Create each tab template
+        let libraryTemplate = createLibraryTemplate()
+        let playlistsTemplate = createPlaylistsTemplate()
+        let nowPlayingTemplate = createNowPlayingTemplate()
+        let searchTemplate = createSearchTemplate()
+        
         // Create tab bar with multiple tabs
         let tabBarTemplate = CPTabBarTemplate(templates: [
-            createLibraryTemplate(),
-            createPlaylistsTemplate(),
-            createNowPlayingTemplate()
+            libraryTemplate,
+            playlistsTemplate,
+            searchTemplate,
+            nowPlayingTemplate
         ])
         
         return tabBarTemplate
@@ -67,9 +75,14 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
                                       image: UIImage(systemName: "shuffle") ?? UIImage()) { [weak self] _ in
             if let randomSong = self?.viewModel.allSongs.randomElement() {
                 self?.viewModel.playSong(randomSong)
-                // Navigate to now playing screen
-                if let tabTemplate = self?.interfaceController?.rootTemplate as? CPTabBarTemplate,
-                   let nowPlayingTemplate = tabTemplate.templates.last {
+                
+                // Navigate to now playing screen - CPNowPlayingTemplate.shared is not optional
+                let nowPlayingTemplate = CPNowPlayingTemplate.shared
+                // Use the modern API for pushing templates
+                if #available(iOS 14.0, *) {
+                    self?.interfaceController?.pushTemplate(nowPlayingTemplate, animated: true, completion: nil)
+                } else {
+                    // Fallback for older iOS versions
                     self?.interfaceController?.pushTemplate(nowPlayingTemplate, animated: true)
                 }
             }
@@ -121,6 +134,14 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         return nowPlayingTemplate
     }
     
+    private func createSearchTemplate() -> CPTemplate {
+        // Create search template
+        let searchTemplate = CPSearchTemplate()
+        searchTemplate.delegate = self
+        
+        return searchTemplate
+    }
+    
     // MARK: - Section Creation
     
     private func createRecentlyPlayedSection() -> CPListSection {
@@ -166,9 +187,14 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         item.handler = { [weak self] (listItem: CPSelectableListItem, completion: @escaping () -> Void) in
             self?.viewModel.playSong(song)
             
-            // Navigate to now playing template
-            if let tabTemplate = self?.interfaceController?.rootTemplate as? CPTabBarTemplate,
-               let nowPlayingTemplate = tabTemplate.templates.last {
+            // Navigate to now playing template - CPNowPlayingTemplate.shared is not optional
+            let nowPlayingTemplate = CPNowPlayingTemplate.shared
+            
+            // Use the modern API for pushing templates
+            if #available(iOS 14.0, *) {
+                self?.interfaceController?.pushTemplate(nowPlayingTemplate, animated: true, completion: nil)
+            } else {
+                // Fallback for older iOS versions
                 self?.interfaceController?.pushTemplate(nowPlayingTemplate, animated: true)
             }
             
@@ -210,7 +236,21 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         let playlistTemplate = CPListTemplate(title: playlist.name, sections: [section])
         
         // Push the template
-        interfaceController?.pushTemplate(playlistTemplate, animated: true)
+        if #available(iOS 14.0, *) {
+            interfaceController?.pushTemplate(playlistTemplate, animated: true, completion: nil)
+        } else {
+            // Fallback for older iOS versions
+            interfaceController?.pushTemplate(playlistTemplate, animated: true)
+        }
+    }
+    
+    // MARK: - Media Player Integration
+    
+    // Modified to be called on-demand and not during CarPlay connection
+    private func setupAudioSession() {
+        // The audio session is now handled by AudioPlaybackManager
+        // This method is kept for compatibility but won't be called directly
+        print("CarPlaySceneDelegate: Audio session setup is handled by AudioPlaybackManager")
     }
     
     // MARK: - Observers
@@ -224,34 +264,74 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
             object: nil
         )
         
+        // Add observers for playback status changes
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePlaybackStarted),
+            name: NSNotification.Name("PlaybackStarted"),
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePlaybackPaused),
+            name: NSNotification.Name("PlaybackPaused"),
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePlaybackStopped),
+            name: NSNotification.Name("PlaybackStopped"),
+            object: nil
+        )
+        
         // Initially update now playing info if a song is already playing
         if viewModel.currentSong != nil {
             updateNowPlayingInfo()
         }
     }
     
-    // MARK: - Media Player Integration
-    
-    private func setupAudioSession() {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("Failed to set up audio session in CarPlay: \(error)")
+    @objc private func updateNowPlayingInfo(_ notification: Notification? = nil) {
+        // If notification provided, extract song info from it
+        if let notification = notification,
+           let userInfo = notification.userInfo,
+           let song = userInfo["song"] as? Song {
+            
+            // Update CarPlay Now Playing template
+            updateCarPlayNowPlaying(
+                song: song,
+                isPlaying: userInfo["isPlaying"] as? Bool ?? false,
+                currentTime: userInfo["currentTime"] as? TimeInterval ?? 0,
+                duration: userInfo["duration"] as? TimeInterval ?? 0
+            )
+            return
         }
-    }
-    
-    @objc private func updateNowPlayingInfo() {
+            
+        // Fallback to ViewModel if notification not provided
         guard let song = viewModel.currentSong else { return }
         
+        updateCarPlayNowPlaying(
+            song: song,
+            isPlaying: viewModel.isPlaying,
+            currentTime: viewModel.currentPlaybackTime,
+            duration: song.duration
+        )
+    }
+    
+    private func updateCarPlayNowPlaying(song: Song, isPlaying: Bool, currentTime: TimeInterval, duration: TimeInterval) {
+        // CarPlay's template will automatically use the MPNowPlayingInfoCenter data
+        // We don't need to manually configure buttons as CarPlay handles this
+        
+        // Just make sure the system's now playing info is up-to-date
         var nowPlayingInfo = [String: Any]()
         
         // Set metadata
         nowPlayingInfo[MPMediaItemPropertyTitle] = song.title
         nowPlayingInfo[MPMediaItemPropertyArtist] = song.artist
-        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = song.duration
-        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = viewModel.currentPlaybackTime
-        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = viewModel.isPlaying ? 1.0 : 0.0
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = duration
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
         
         // Set album artwork
         if let image = UIImage(named: song.albumArt) {
@@ -261,6 +341,19 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         
         // Update now playing info
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+    }
+    
+    @objc private func handlePlaybackStarted() {
+        updateNowPlayingInfo()
+    }
+    
+    @objc private func handlePlaybackPaused() {
+        updateNowPlayingInfo()
+    }
+    
+    @objc private func handlePlaybackStopped() {
+        // Clear the now playing template or update with stopped state
+        updateNowPlayingInfo()
     }
 }
 
@@ -288,5 +381,14 @@ extension CarPlaySceneDelegate: CPSearchTemplateDelegate {
     func searchTemplate(_ searchTemplate: CPSearchTemplate, selectedResult item: CPListItem, completionHandler: @escaping () -> Void) {
         // Required implementation
         completionHandler()
+    }
+}
+
+// MARK: - CPTemplateApplicationSceneDelegate Additional Methods
+extension CarPlaySceneDelegate {
+    func templateApplicationScene(_ templateApplicationScene: CPTemplateApplicationScene,
+                                didDisconnect interfaceController: CPInterfaceController) {
+        self.interfaceController = nil
+        NotificationCenter.default.removeObserver(self)
     }
 }

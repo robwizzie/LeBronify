@@ -8,6 +8,19 @@
 import SwiftUI
 import AVFoundation
 
+// Sheet types for PlayerView
+enum PlayerSheetType: Identifiable {
+    case queue
+    case addToPlaylist
+    
+    var id: Int {
+        switch self {
+        case .queue: return 1
+        case .addToPlaylist: return 2
+        }
+    }
+}
+
 struct SongRowWithActions: View {
     let song: Song
     @EnvironmentObject var viewModel: LeBronifyViewModel
@@ -68,7 +81,7 @@ struct SongRowWithActions: View {
                 }
                 
                 Button(action: {
-                    viewModel.queueManager.playNext(song: song)
+                    viewModel.playNext(song)
                 }) {
                     Label("Play Next", systemImage: "text.insert")
                 }
@@ -111,7 +124,8 @@ struct SongRowWithActions: View {
 struct PlayerView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
     @State private var sortOption: SortOption = .plays
-    @State private var showingQueueView = false
+    @State private var playCountObserver: NSObjectProtocol? = nil
+    @State private var activeSheet: PlayerSheetType?
     
     var body: some View {
         GeometryReader { geometry in
@@ -283,7 +297,7 @@ struct PlayerView: View {
                             }
                             
                             Button(action: {
-                                showingQueueView = true
+                                activeSheet = .queue
                             }) {
                                 VStack(spacing: 4) {
                                     Image(systemName: "list.bullet")
@@ -291,6 +305,22 @@ struct PlayerView: View {
                                         .foregroundColor(.gray)
                                     
                                     Text("Queue")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                            
+                            Button(action: {
+                                if viewModel.currentSong != nil {
+                                    activeSheet = .addToPlaylist
+                                }
+                            }) {
+                                VStack(spacing: 4) {
+                                    Image(systemName: "plus.square.on.square")
+                                        .font(.title3)
+                                        .foregroundColor(.gray)
+                                    
+                                    Text("Add to Playlist")
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
@@ -368,8 +398,62 @@ struct PlayerView: View {
             }
         }
         .padding(.top)
-        .sheet(isPresented: $showingQueueView) {
-            QueueView()
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .queue:
+                QueueView()
+            case .addToPlaylist:
+                if let currentSong = viewModel.currentSong {
+                    AddToPlaylistViewWrapper(song: currentSong)
+                        .environmentObject(viewModel)
+                }
+            }
+        }
+        .onAppear {
+            // Set up observer for play count updates to refresh player display
+            setupPlayCountObserver()
+        }
+        .onDisappear {
+            // Clean up observer
+            if let observer = playCountObserver {
+                NotificationCenter.default.removeObserver(observer)
+                playCountObserver = nil
+            }
+        }
+    }
+    
+    // Set up notification observer for play count updates
+    private func setupPlayCountObserver() {
+        playCountObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PlayCountUpdated"),
+            object: nil,
+            queue: .main
+        ) { notification in
+            print("PlayerView: Received play count update")
+            
+            // If we receive a specific song ID in the notification
+            if let userInfo = notification.userInfo,
+               let songID = userInfo["songID"] as? UUID {
+                
+                // If the updated song is the current song, force UI refresh
+                if let currentSong = self.viewModel.currentSong,
+                   currentSong.id == songID {
+                    print("PlayerView: Refreshing current song play count UI")
+                    
+                    // Get the updated song from allSongs
+                    if let updatedSong = self.viewModel.allSongs.first(where: { $0.id == songID }) {
+                        // Ensure we're on the main thread for UI updates
+                        DispatchQueue.main.async {
+                            // This will force the view to update with the new play count
+                            self.viewModel.currentSong = updatedSong
+                        }
+                    }
+                }
+            } else {
+                // Just refresh the view - SwiftUI will update the UI 
+                // since viewModel properties are @Published
+                print("PlayerView: Refreshing entire play count UI")
+            }
         }
     }
     

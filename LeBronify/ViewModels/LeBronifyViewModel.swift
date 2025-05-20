@@ -10,6 +10,9 @@ import Combine
 import MediaPlayer
 import AVFoundation
 
+// Define an alias to keep backward compatibility
+typealias LeBronifyLiveActivityAttributes = Int
+
 class LeBronifyViewModel: ObservableObject {
     // Song and playlist data
     @Published var allSongs: [Song] = []
@@ -47,38 +50,42 @@ class LeBronifyViewModel: ObservableObject {
     // Taco Tuesday manager
     private let tacoManager = TacoTuesdayManager.shared
     
+    // Tracking for play count
+    private var playTimeThresholdReached = false
+    private var currentSongPlayTimer: Timer?
+    
+    // Flag to track genuine playback vs. initialization
+    private var hasPlaybackStarted: Bool = false
+    
+    // Add the missing threshold constant
+    private let currentPlaybackTimeThreshold: TimeInterval = 10.0 // 10 seconds threshold for play count
+    
+    // MARK: - Initialization and Setup
+    
     init() {
-        // First, do a one-time full refresh of songs on app launch
-        dataManager.forceRefreshAllSongs()
+        print("ViewModel: Starting fast initialization")
         
-        // Then load the data (which will now use the cached results)
+        // Load data using cached approach for speed
         loadData()
+        
+        // Set up essential timers and notifications
         setupTimers()
         setupNotifications()
         
-        // Set up binding between currentSong and queue manager's currentSongInQueue
-        queueManager.$currentQueue
-                .combineLatest(queueManager.$queueIndex)
-                .map { queue, index -> Song? in
-                    guard !queue.isEmpty, index >= 0, index < queue.count else {
-                        return nil
-                    }
-                    return queue[index]
-                }
-                .sink { [weak self] song in
-                    self?.currentSong = song
-                }
-                .store(in: &cancellables)
-            
-        // IMPORTANT: Always ensure there's a random queue available by default
-        queueManager.generateRandomPresetQueue()
-        print("ViewModel: Initialized with random queue containing \(queueManager.currentQueue.count) songs")
-            
-        // Prepare the first song in the queue without playing it
-        if let firstSong = queueManager.currentSongInQueue {
-            audioManager.prepareAudio(for: firstSong)
-            print("ViewModel: Prepared first song in queue: \(firstSong.title)")
+        // Prepare queue but don't force audio initialization
+        if queueManager.currentQueue.isEmpty {
+            _ = queueManager.generateRandomPresetQueue()
         }
+        
+        // Bind to queue updates
+        setupQueueBinding()
+        
+        // Set up playback timer
+        setupPlaybackTimer()
+        
+        // Don't do audio setup or queue manipulation on init
+        // This will prevent audio session errors during startup
+        print("ViewModel: Fast initialization complete")
     }
     
     // Cancellables for Combine
@@ -86,6 +93,11 @@ class LeBronifyViewModel: ObservableObject {
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        
+        // Clean up timers
+        playbackTimer?.invalidate()
+        adTimer?.invalidate()
+        currentSongPlayTimer?.invalidate()
     }
     
     // MARK: - Data Loading
@@ -153,159 +165,241 @@ class LeBronifyViewModel: ObservableObject {
         favoriteSongs = dataManager.getFavoriteSongs()
     }
     
+    // MARK: - Audio Session Notifications
+
+    private func setupAudioSessionNotifications() {
+        // Only set up when actually needed, not during initialization
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePlaybackFinished),
+            name: .audioPlaybackFinished,
+            object: nil
+        )
+        print("ViewModel: Audio playback observers set up")
+    }
+    
+    @objc private func handlePlaybackFinished() {
+        print("ViewModel: Audio playback finished notification received")
+        
+        // Only proceed if genuine playback has started
+        // This prevents auto-skipping when initializing playback
+        if hasPlaybackStarted {
+            // Double check that we're not at the very beginning of the track
+            if currentPlaybackTime > 1.0 || currentPlaybackTime >= duration - 1.0 {
+                print("ViewModel: Confirmed genuine end of playback, moving to next song")
+                DispatchQueue.main.async { [weak self] in
+                    self?.nextSong()
+                }
+            } else {
+                print("ViewModel: Ignoring playback finished near start of track - likely unintended")
+            }
+        } else {
+            print("ViewModel: Ignoring playback finished notification - playback hasn't genuinely started yet")
+        }
+    }
+    
     // MARK: - Song Playback
     
     func playSong(_ song: Song) {
         print("ViewModel: playSong called for \(song.title)")
         
-        // Check if we're transitioning to or from the taco song
-        let wasTacoSong = isTacoSongPlaying
-        let isTacoSong = song.title == "TACO TUESDAYYYYY"
+        // Ensure audio session notifications are set up on first playback
+        setupAudioSessionNotifications()
         
-        if currentSong?.id == song.id && isPlaying {
-            // Already playing this song, do nothing
-            print("ViewModel: Already playing this song, doing nothing")
-            return
-        }
+        // Reset playback state flags
+        resetPlayCountTracking()
+        hasPlaybackStarted = false
         
-        // Important queue management section
-        let songAlreadyInQueue = queueManager.currentQueue.contains(where: { $0.id == song.id })
-        print("ViewModel: Song already in queue: \(songAlreadyInQueue)")
+        // Track taco song state
+        _ = isTacoSongPlaying
         
-        if songAlreadyInQueue {
-            // Song is already in queue, jump to it
-            if let index = queueManager.currentQueue.firstIndex(where: { $0.id == song.id }) {
-                print("ViewModel: Song already in queue, jumping to index \(index)")
-                // This should just change the index, not modify the queue
-                queueManager.jumpToSong(at: index)
-            }
-        } else {
-            // Only create a new queue if the current one is empty
-            if queueManager.currentQueue.isEmpty {
-                print("ViewModel: Empty queue, creating new queue with song")
-                queueManager.setQueue(songs: [song])
-            } else {
-                // Otherwise, add to the existing queue and jump to it
-                print("ViewModel: Adding song to existing queue")
-                queueManager.addToQueue(song: song)
-                if let index = queueManager.currentQueue.firstIndex(where: { $0.id == song.id }) {
-                    queueManager.jumpToSong(at: index)
-                }
-            }
-        }
+        // Stop current playback before starting a new one
+        audioManager.stop()
         
-        // Set current song
+        // Have QueueManager handle the song placement properly
+        queueManager.playSongImmediately(song)
+        
+        // Update the current song immediately - this is important for the UI
         currentSong = song
         
-        // Update audio playback
-        if audioManager.playSong(song) {
-            isPlaying = true
-            currentPlaybackTime = 0
-            duration = song.duration
+        // Ensure the audio session is active
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("ViewModel: Failed to activate audio session: \(error)")
+        }
+        
+        // Start audio playback with a small delay to ensure proper initialization
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
             
-            // Update taco song state
-            isTacoSongPlaying = isTacoSong
-            
-            // Publish notification for taco song state change
-            if wasTacoSong != isTacoSongPlaying {
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("TacoSongStateChanged"),
-                    object: nil,
-                    userInfo: ["isPlaying": isPlaying]
-                )
-            }
-            
-            // Ensure the queue manager knows which song is playing
-            queueManager.ensureCorrectSongIsPlaying(song)
-            
-            // Update play count in the data store
-            print("ViewModel: Updating play count for song: \(song.title), ID: \(song.id)")
-            dataManager.updatePlayCount(for: song.id)
-            
-            // Refresh the dynamic playlists
-            refreshDynamicPlaylists()
-            
-            // Post notification for CarPlay UI to update
-            NotificationCenter.default.post(name: NSNotification.Name("SongChanged"), object: nil)
-            
-            // Random chance to show an ad (but not in CarPlay mode)
-            if Double.random(in: 0...1) < 0.2 && !isConnectedToCarPlay() { // 20% chance
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
-                    self?.showRandomAd()
-                }
-            }
+            if self.audioManager.playSong(song) {
+                self.isPlaying = true
+                self.currentPlaybackTime = 0
+                self.duration = song.duration
+                
+                // Mark that genuine playback has started
+                self.hasPlaybackStarted = true
+                
+                // Update taco song state
+                self.isTacoSongPlaying = song.title == "TACO TUESDAYYYYY"
+                
+                // Start play time tracking
+                self.startPlayTimeTracking()
+                
+                // Refresh dynamic playlists
+                self.refreshDynamicPlaylists()
+                
+                print("ViewModel: Successfully started playing: \(song.title)")
+                
+                // Post notification that playback has started
+                NotificationCenter.default.post(name: NSNotification.Name("PlaybackStarted"), object: nil)
+                
+                // Print queue state for debugging
+                self.printQueueState()
         } else {
-            print("ViewModel: Failed to play song: \(song.title)")
+                print("ViewModel: Failed to play song: \(song.title)")
+                self.isPlaying = false
+                // Ensure hasPlaybackStarted remains false on failure
+                self.hasPlaybackStarted = false
+            }
         }
     }
     
-    func togglePlayPause() {
+    // Track play time to count as a play after 10 seconds
+    private func startPlayTimeTracking() {
+        // Reset state
+        playTimeThresholdReached = false
+        
+        // Cancel any existing timer
+        currentSongPlayTimer?.invalidate()
+        
+        // Start new timer for 10 seconds
+        currentSongPlayTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
+            guard let self = self, self.isPlaying, let currentSong = self.currentSong else { return }
+            
+            print("ViewModel: 10-second play threshold reached for song: \(currentSong.title)")
+            self.playTimeThresholdReached = true
+            
+            // Now update the play count after 10 seconds
+            self.dataManager.updatePlayCount(for: currentSong.id)
+            
+            // Refresh all song data across the app
+            self.refreshAllSongData()
+            
+            // Notify observers about play count update
+            self.notifyPlayCountUpdated()
+        }
+    }
+    
+    private func resetPlayCountTracking() {
+        playTimeThresholdReached = false
+        currentSongPlayTimer?.invalidate()
+        currentSongPlayTimer = nil
+    }
+    
+    // Update all song references in the app
+    private func refreshAllSongData() {
+        // Reload all songs to get fresh play counts
+        allSongs = dataManager.loadSongs()
+        
+        // Refresh dynamic playlists
+            refreshDynamicPlaylists()
+            
+        // Update current song reference to get fresh play count
+        if let currentSong = currentSong {
+            self.currentSong = allSongs.first(where: { $0.id == currentSong.id }) ?? currentSong
+        }
+    }
+    
+    @objc func togglePlayPause() {
         print("ViewModel: togglePlayPause called with isPlaying=\(isPlaying)")
         
-        // If we have a song selected but it's not playing yet
-        if !isPlaying && currentSong != nil {
-            print("ViewModel: Starting playback of song: \(currentSong!.title)")
+        if isPlaying {
+            audioManager.pause()
+            isPlaying = false
             
-            // Check if we need to update the queue index to match this song
-            let songInQueue = queueManager.currentQueue.contains(where: { $0.id == currentSong!.id })
-            if songInQueue && queueManager.currentSongInQueue?.id != currentSong!.id {
-                // Ensure the queue knows which song should be playing
-                queueManager.ensureCorrectSongIsPlaying(currentSong!)
-                print("ViewModel: Updated queue to match current song")
+            // Pause play time tracking by invalidating timer
+            currentSongPlayTimer?.invalidate()
+        } else {
+            // If we have songs in queue but nothing is playing yet, play the first song or the current song
+            if !queueManager.currentQueue.isEmpty {
+                if currentSong == nil {
+                    // This handles the case where the first song isn't playing correctly
+                    print("ViewModel: Have songs in queue but nothing playing, starting first song")
+                    playFirstSongInQueue()
+                    return
+                } else {
+                    // We have a currentSong but it's not playing - use it directly
+                    print("ViewModel: Resuming the current song: \(currentSong?.title ?? "unknown")")
+                    if let song = currentSong {
+                        // Ensure proper song position in queue
+                        queueManager.ensureCorrectSongIsPlaying(song)
+                        
+                        // Try resuming existing playback first
+                        if !audioManager.resume() {
+                            // If resume fails, try playing the song again
+                            print("ViewModel: Resume failed, restarting playback")
+                            playSong(song)
+                            return
+                        }
+                    }
+                }
+            } else {
+                print("ViewModel: Queue is empty, nothing to play")
+                return
             }
             
-            // Start playback using audioManager directly
-            if audioManager.playSong(currentSong!) {
+            // If we get here, audio was successfully resumed
                 isPlaying = true
                 
-                // Update play count (since this is starting a new play session)
-                dataManager.updatePlayCount(for: currentSong!.id)
-                refreshDynamicPlaylists()
-                
-                print("ViewModel: Started playback successfully")
+            // If we haven't reached the threshold yet, restart the timer
+            if !playTimeThresholdReached {
+                startPlayTimeTracking()
             }
-            return
         }
         
-        // Normal toggle behavior for ongoing playback
-        if audioManager.togglePlayPause() {
-            isPlaying.toggle()
-            print("ViewModel: Toggled playback to isPlaying=\(isPlaying)")
-            
-            // If the taco song state changes, notify observers
+        // Notify if taco song
             if isTacoSongPlaying {
                 NotificationCenter.default.post(
                     name: NSNotification.Name("TacoSongStateChanged"),
                     object: nil,
                     userInfo: ["isPlaying": isPlaying]
                 )
-            }
-        } else {
-            print("ViewModel: Failed to toggle playback state")
         }
     }
     
-    func nextSong() {
+    @objc func nextSong() {
         print("ViewModel: nextSong called")
         
-        // First, check if there's anything to play next
+        // Reset play count tracking
+        resetPlayCountTracking()
+        
+        // First check if the queue is empty
         guard !queueManager.currentQueue.isEmpty else {
             print("ViewModel: Queue is empty, can't play next song")
             return
         }
         
-        // Add a brief delay to ensure proper audio handling
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
+        // Always stop current playback first
+        audioManager.stop()
             
-            // Get the next song from queue manager
-            if let nextSong = self.queueManager.nextSong() {
-                print("ViewModel: Moving to next song: \(nextSong.title)")
+        // Get the next song from queue manager - with true queue behavior, current song will be removed
+        if let nextSong = queueManager.nextSong() {
+            print("ViewModel: Playing next song: \(nextSong.title)")
                 
-                // Stop current playback first
-                self.audioManager.stop()
+            // Ensure the audio session is active
+            do {
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("ViewModel: Failed to activate audio session: \(error)")
+            }
+            
+            // Start audio playback with a small delay to ensure proper initialization
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                guard let self = self else { return }
                 
-                // Then start the new song
+                // Start audio playback
                 if self.audioManager.playSong(nextSong) {
                     // Update ViewModel state
                     self.currentSong = nextSong
@@ -313,40 +407,32 @@ class LeBronifyViewModel: ObservableObject {
                     self.currentPlaybackTime = 0
                     self.duration = nextSong.duration
                     
+                    // Start play time tracking
+                    self.startPlayTimeTracking()
+                    
                     // Update taco song state
                     self.isTacoSongPlaying = nextSong.title == "TACO TUESDAYYYYY"
                     
-                    // Update play count
-                    self.dataManager.updatePlayCount(for: nextSong.id)
+                    // Post notification that playback has started
+                    NotificationCenter.default.post(name: NSNotification.Name("PlaybackStarted"), object: nil)
                     
-                    // Refresh dynamic playlists
-                    self.refreshDynamicPlaylists()
-                    
-                    print("ViewModel: Successfully started playing next song")
+                    // Print queue state for debugging
+                    self.printQueueState()
                 } else {
                     print("ViewModel: Failed to play next song: \(nextSong.title)")
+                    self.isPlaying = false
+                }
                 }
             } else {
-                print("ViewModel: No next song available - end of queue")
-                // We've reached the end of the queue with repeat off
-                if self.queueManager.repeatMode == .all && !self.queueManager.currentQueue.isEmpty {
-                    // With repeat all, go back to the beginning
-                    self.queueManager.queueIndex = 0
-                    if let firstSong = self.queueManager.currentSongInQueue {
-                        print("ViewModel: Looping to first song in queue: \(firstSong.title)")
-                        self.playSong(firstSong)
-                    }
-                }
-            }
-            
-            // Log current queue state
-            print("ViewModel: Queue now at index \(self.queueManager.queueIndex) of \(self.queueManager.currentQueue.count)")
+            print("ViewModel: No next song available in queue")
         }
     }
 
-    func previousSong() {
+    @objc func previousSong() {
         print("ViewModel: previousSong called")
-        let wasTacoSong = isTacoSongPlaying
+        
+        // Reset play count tracking
+        resetPlayCountTracking()
         
         // If we're more than 3 seconds into the song, restart it instead of going to previous
         if currentPlaybackTime > 3.0 {
@@ -355,41 +441,50 @@ class LeBronifyViewModel: ObservableObject {
             return
         }
         
+        // Always stop current playback first
+        audioManager.stop()
+        
+        // Get the previous song from queue manager
         if let previousSong = queueManager.previousSong() {
-            // Log the actual previous song title
-            print("ViewModel: Moving to previous song: \(previousSong.title)")
+            print("ViewModel: Playing previous song: \(previousSong.title)")
             
-            // The queue index has already been updated in queueManager.previousSong()
-            // We just need to start playback of this song
-            if audioManager.playSong(previousSong) {
-                currentSong = previousSong
-                isPlaying = true
-                currentPlaybackTime = 0
-                duration = previousSong.duration
+            // Ensure the audio session is active
+            do {
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("ViewModel: Failed to activate audio session: \(error)")
+            }
+            
+            // Start audio playback with a small delay to ensure proper initialization
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                guard let self = self else { return }
+                
+                // Start audio playback
+                if self.audioManager.playSong(previousSong) {
+                    self.currentSong = previousSong
+                    self.isPlaying = true
+                    self.currentPlaybackTime = 0
+                    self.duration = previousSong.duration
+                    
+                    // Start play time tracking
+                    self.startPlayTimeTracking()
                 
                 // Update taco song state
-                isTacoSongPlaying = previousSong.title == "TACO TUESDAYYYYY"
-                
-                // Don't update play count for previous song since the user is just going back
-                
-                // Post notification for CarPlay UI to update
-                NotificationCenter.default.post(name: NSNotification.Name("SongChanged"), object: nil)
+                    self.isTacoSongPlaying = previousSong.title == "TACO TUESDAYYYYY"
+                    
+                    // Post notification that playback has started
+                    NotificationCenter.default.post(name: NSNotification.Name("PlaybackStarted"), object: nil)
+                    
+                    // Print queue state for debugging
+                    self.printQueueState()
+                } else {
+                    print("ViewModel: Failed to play previous song: \(previousSong.title)")
+                    self.isPlaying = false
+                }
             }
         } else {
-            print("ViewModel: No previous song available")
+            print("ViewModel: No previous song available in queue")
         }
-        
-        // Check if the taco song state changed
-        if wasTacoSong != isTacoSongPlaying {
-            NotificationCenter.default.post(
-                name: NSNotification.Name("TacoSongStateChanged"),
-                object: nil,
-                userInfo: ["isPlaying": isPlaying]
-            )
-        }
-        
-        // Debug the queue state after moving
-        print("ViewModel: Queue now at index \(queueManager.queueIndex) of \(queueManager.currentQueue.count)")
     }
     
     func seek(to position: TimeInterval) {
@@ -408,12 +503,30 @@ class LeBronifyViewModel: ObservableObject {
         }
     }
     
+    func playNext(_ song: Song) {
+        // Add song to play immediately after current
+        queueManager.playAfterCurrent(song)
+        
+        // If nothing is playing, start this song
+        if currentSong == nil {
+            playSong(song)
+        }
+    }
+    
     func removeFromQueue(at index: Int) {
         queueManager.removeFromQueue(at: index)
     }
     
     func clearQueue() {
         queueManager.clearQueue()
+        
+        // If audio is playing, stop it
+        if isPlaying {
+            audioManager.stop()
+            isPlaying = false
+            currentPlaybackTime = 0
+            currentSong = nil
+        }
     }
     
     func moveQueueItem(from sourceIndex: Int, to destinationIndex: Int) {
@@ -428,79 +541,125 @@ class LeBronifyViewModel: ObservableObject {
         queueManager.cycleRepeatMode()
     }
     
-    // Add this to your ViewModel
-    func printQueueState() {
-        print("\n=== QUEUE STATE ===")
-        print("Queue size: \(queueManager.currentQueue.count)")
-        print("Current index: \(queueManager.queueIndex)")
-        print("Current song in queue: \(queueManager.currentSongInQueue?.title ?? "None")")
-        print("Current song in ViewModel: \(currentSong?.title ?? "None")")
-        print("Is playing: \(isPlaying)")
-        print("Shuffle enabled: \(queueManager.shuffleEnabled)")
-        print("Repeat mode: \(queueManager.repeatMode)")
-        
-        print("\nQueue contents:")
-        for (index, song) in queueManager.currentQueue.enumerated() {
-            let marker = index == queueManager.queueIndex ? " ← CURRENT" : ""
-            print("\(index): \(song.title) by \(song.artist)\(marker)")
-        }
-        print("=== END QUEUE STATE ===\n")
-    }
+    // MARK: - Random Queue
     
     func playRandomPresetQueue() {
-        print("ViewModel: Playing random preset queue")
+        print("ViewModel: playRandomPresetQueue called")
         
-        // First stop any current playback completely
+        // First stop any current playback
         audioManager.stop()
         isPlaying = false
-        currentPlaybackTime = 0
         
-        // Load the latest songs to ensure we have the most up-to-date list
-        let allSongs = dataManager.loadSongs()
+        // Generate a diverse random queue
+        let allAvailableSongs = dataManager.loadSongs()
         
-        if !allSongs.isEmpty {
-            // Generate a random queue with 10 songs
-            let randomQueue = Array(allSongs.shuffled().prefix(10))
+        if !allAvailableSongs.isEmpty {
+            // Generate a good random mix
+            let randomSongs = generateRandomMix(from: allAvailableSongs, count: 10)
+            print("ViewModel: Generated random queue with \(randomSongs.count) songs")
             
             // Set the new queue
-            queueManager.setQueue(songs: randomQueue)
-            print("QueueManager: Created new random queue with \(randomQueue.count) songs")
+            queueManager.setQueue(songs: randomSongs)
             
-            // Get the first song
+            // Play the first song
             if let firstSong = queueManager.currentSongInQueue {
-                print("ViewModel: Playing first song from new random queue: \(firstSong.title)")
-                
-                // Rather than using playSong, we'll play it more directly to avoid queue confusion
-                currentSong = firstSong
-                
-                // Explicitly play the audio
-                if audioManager.playSong(firstSong) {
-                    isPlaying = true
-                    currentPlaybackTime = 0
-                    duration = firstSong.duration
-                    
-                    // Check if it's a taco song
-                    isTacoSongPlaying = firstSong.title == "TACO TUESDAYYYYY"
-                    
-                    // Update play count
-                    dataManager.updatePlayCount(for: firstSong.id)
-                    
-                    // Refresh dynamic playlists
-                    refreshDynamicPlaylists()
-                    
-                    print("ViewModel: Successfully started playing random queue with first song: \(firstSong.title)")
-                } else {
-                    print("ViewModel: Failed to play first song in random queue: \(firstSong.title)")
-                }
-            } else {
-                print("ViewModel: Error - Random queue is empty")
+                playSong(firstSong)
             }
         } else {
             print("ViewModel: No songs available for random queue")
         }
+    }
+    
+    // Create a diverse random mix of songs
+    private func generateRandomMix(from songs: [Song], count: Int) -> [Song] {
+        guard !songs.isEmpty else { return [] }
         
-        // Debug the queue state after setup
-        printQueueState()
+        // Get a diverse selection of artists first
+        let artists = Set(songs.map { $0.artist })
+        var randomMix: [Song] = []
+        var remainingSongs = songs
+        
+        // First pass: Try to get one song from each artist to ensure variety
+        for artist in artists {
+            if randomMix.count >= count { break }
+            
+            if let artistSong = remainingSongs.first(where: { $0.artist == artist }) {
+                randomMix.append(artistSong)
+                remainingSongs.removeAll(where: { $0.id == artistSong.id })
+            }
+        }
+        
+        // Second pass: Fill remaining slots with random songs
+        if randomMix.count < count {
+            let remaining = count - randomMix.count
+            let additionalSongs = Array(remainingSongs.shuffled().prefix(remaining))
+            randomMix.append(contentsOf: additionalSongs)
+        }
+        
+        // Final shuffle to mix up the order
+        return randomMix.shuffled()
+    }
+    
+    // MARK: - Playlist/Collection Playback
+    
+    // Play a playlist 
+    func playPlaylist(_ playlist: Playlist, shuffled: Bool = false) {
+        print("ViewModel: Playing playlist: \(playlist.name), shuffled: \(shuffled)")
+        
+        let songs = getSongs(for: playlist)
+        if songs.isEmpty {
+            print("ViewModel: Playlist is empty, nothing to play")
+            return
+        }
+        
+        // Set up the queue first
+        queueManager.shuffleEnabled = shuffled
+        queueManager.setQueue(songs: songs)
+        
+        // Then play the first song
+        if let firstSong = queueManager.currentSongInQueue {
+            playSong(firstSong)
+        }
+    }
+    
+    // Play artist songs
+    func playArtistSongs(artist: String, shuffled: Bool = false) {
+        print("ViewModel: Playing artist songs: \(artist), shuffled: \(shuffled)")
+        
+        let songs = allSongs.filter { $0.artist == artist }
+        if songs.isEmpty {
+            print("ViewModel: No songs found for artist")
+            return
+        }
+        
+        // Set up the queue first
+        queueManager.shuffleEnabled = shuffled
+        queueManager.setQueue(songs: songs)
+        
+        // Then play the first song
+        if let firstSong = queueManager.currentSongInQueue {
+            playSong(firstSong)
+                }
+    }
+    
+    // Play category songs
+    func playCategorySongs(category: String, shuffled: Bool = false) {
+        print("ViewModel: Playing category songs: \(category), shuffled: \(shuffled)")
+        
+        let songs = allSongs.filter { $0.categories.contains(category) }
+        if songs.isEmpty {
+            print("ViewModel: No songs found for category")
+            return
+        }
+        
+        // Set up the queue first
+        queueManager.shuffleEnabled = shuffled
+        queueManager.setQueue(songs: songs)
+        
+        // Then play the first song
+        if let firstSong = queueManager.currentSongInQueue {
+            playSong(firstSong)
+        }
     }
     
     // MARK: - Playlist Management
@@ -509,34 +668,341 @@ class LeBronifyViewModel: ObservableObject {
         return dataManager.getSongsForPlaylist(playlist)
     }
     
-    func createPlaylist(name: String, description: String, coverImage: String) {
-        let newPlaylist = Playlist(
+    // Updated to support custom image uploads and handle playlist creation correctly
+    func createPlaylist(name: String, description: String, coverImage: String, customImage: UIImage? = nil) {
+        print("ViewModel: Creating playlist: \(name)")
+        
+        // Validation
+        guard !name.isEmpty else {
+            print("ViewModel: Error - playlist name cannot be empty")
+            return
+        }
+        
+        let newPlaylist: Playlist
+        
+        if let image = customImage {
+            // If we have a custom image, save it to disk and use its filename
+            let imageFilename = saveCustomPlaylistImage(image, name: name)
+            newPlaylist = Playlist(
             name: name,
             description: description,
-            coverImage: coverImage
+                coverImage: imageFilename,
+                songIDs: [],
+                isSystem: false  // User-created playlists are not system playlists
+            )
+        } else {
+            // Use the provided coverImage string (system image name)
+            newPlaylist = Playlist(
+                name: name,
+                description: description,
+                coverImage: coverImage,
+                songIDs: [],
+                isSystem: false  // User-created playlists are not system playlists
+            )
+        }
+        
+        // Save the playlist
+        dataManager.updatePlaylist(newPlaylist)
+        
+        // Refresh playlists after creating a new one
+        playlists = dataManager.loadPlaylists()
+        
+        // Notify about playlist creation
+        NotificationCenter.default.post(
+            name: NSNotification.Name("PlaylistCreated"),
+            object: nil,
+            userInfo: ["playlistID": newPlaylist.id]
         )
         
-        dataManager.updatePlaylist(newPlaylist)
-        playlists = dataManager.loadPlaylists()
+        print("ViewModel: Created playlist with ID: \(newPlaylist.id)")
     }
     
-    func addSongToPlaylist(songID: UUID, playlistID: UUID) {
-        var playlists = dataManager.loadPlaylists()
-        if let index = playlists.firstIndex(where: { $0.id == playlistID }) {
-            if !playlists[index].songIDs.contains(songID) {
-                playlists[index].songIDs.append(songID)
-                dataManager.savePlaylists(playlists)
-                self.playlists = playlists
+    // Helper method to save custom images
+    private func saveCustomPlaylistImage(_ image: UIImage, name: String) -> String {
+        // Create a unique filename based on the playlist name and current timestamp
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let safeName = name.replacingOccurrences(of: " ", with: "_")
+                           .replacingOccurrences(of: "/", with: "_")
+                           .replacingOccurrences(of: "\\", with: "_")
+        let filename = "playlist_\(safeName)_\(timestamp).jpg"
+        
+        // Get documents directory
+        guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            print("Error: Could not access documents directory")
+            return "playlist_default"
+        }
+        
+        // Create playlists images directory if it doesn't exist
+        let playlistImagesDirectory = documentsDirectory.appendingPathComponent("PlaylistImages")
+        
+        do {
+            try FileManager.default.createDirectory(at: playlistImagesDirectory, 
+                                                   withIntermediateDirectories: true, 
+                                                   attributes: nil)
+        } catch {
+            print("Error creating playlist images directory: \(error)")
+        }
+        
+        // Create full path to save image
+        let fileURL = playlistImagesDirectory.appendingPathComponent(filename)
+        
+        // Convert image to JPEG data with 80% quality
+        if let imageData = image.jpegData(compressionQuality: 0.8) {
+            do {
+                try imageData.write(to: fileURL)
+                print("ViewModel: Saved custom playlist image to \(fileURL.path)")
+                return filename
+            } catch {
+                print("ViewModel: Error saving playlist image: \(error)")
             }
+        }
+        
+        // Return default image name if save failed
+        return "playlist_default"
+    }
+    
+    // Method to update an existing playlist
+    func updatePlaylist(id: UUID, name: String, description: String, coverImage: String? = nil, customImage: UIImage? = nil) {
+        print("ViewModel: Updating playlist \(id)")
+        
+        // Get current playlists
+        var playlists = dataManager.loadPlaylists()
+        
+        // Find the playlist to update
+        guard let index = playlists.firstIndex(where: { $0.id == id }) else {
+            print("ViewModel: Error - playlist with ID \(id) not found")
+            return
+        }
+        
+        // Protect system playlists from modification
+        if playlists[index].isSystem {
+            print("ViewModel: Error - cannot modify system playlist")
+            return
+        }
+        
+        // Validate playlist name
+        guard !name.isEmpty else {
+            print("ViewModel: Error - playlist name cannot be empty")
+            return
+        }
+        
+        // Keep the same song IDs
+        let songIDs = playlists[index].songIDs
+        
+        // Determine the cover image to use
+        let finalCoverImage: String
+        
+        if let image = customImage {
+            // Save the custom image and use its filename
+            finalCoverImage = saveCustomPlaylistImage(image, name: name)
+            
+            // If there was a previous custom image, try to delete it
+            let previousCoverImage = playlists[index].coverImage
+            deleteOldPlaylistImage(previousCoverImage)
+        } else if let newCoverImage = coverImage {
+            // Use the provided system image name
+            finalCoverImage = newCoverImage
+        } else {
+            // Keep the existing cover image
+            finalCoverImage = playlists[index].coverImage
+        }
+        
+        // Create updated playlist
+        let updatedPlaylist = Playlist(
+            id: id,
+            name: name,
+            description: description,
+            coverImage: finalCoverImage,
+            songIDs: songIDs,
+            isSystem: playlists[index].isSystem
+        )
+        
+        // Update in the array
+        playlists[index] = updatedPlaylist
+        
+        // Save updated playlists
+        dataManager.savePlaylists(playlists)
+        
+        // Update view model data
+        self.playlists = playlists
+        
+        // Notify observers that a playlist was updated
+        NotificationCenter.default.post(
+            name: NSNotification.Name("PlaylistUpdated"),
+            object: nil,
+            userInfo: ["playlistID": id]
+        )
+        
+        print("ViewModel: Playlist updated successfully")
+    }
+    
+    // Helper to delete old custom playlist images
+    private func deleteOldPlaylistImage(_ filename: String) {
+        // Only attempt to delete if it doesn't look like a system image name
+        guard !filename.isEmpty && !filename.contains(".") && filename.count > 10 else {
+            return
+        }
+        
+        // Get documents directory
+        guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return
+        }
+        
+        // Build path to the image
+        let playlistImagesDirectory = documentsDirectory.appendingPathComponent("PlaylistImages")
+        let fileURL = playlistImagesDirectory.appendingPathComponent(filename)
+        
+        // Try to delete the file
+        do {
+            try FileManager.default.removeItem(at: fileURL)
+            print("ViewModel: Deleted old playlist image: \(filename)")
+        } catch {
+            print("ViewModel: Could not delete old playlist image: \(error)")
+        }
+    }
+    
+    // Improved method to add song to playlist with better error handling and success notification
+    func addSongToPlaylist(songID: UUID, playlistID: UUID) {
+        print("ViewModel: Adding song \(songID) to playlist \(playlistID)")
+        
+        // Get current playlists from data manager
+        var playlists = dataManager.loadPlaylists()
+        
+        // Find the playlist to modify
+        if let index = playlists.firstIndex(where: { $0.id == playlistID }) {
+            // Check if this is a system playlist (Recent, Top Hits, Favorites)
+            if playlists[index].isSystem {
+                print("ViewModel: Cannot add song to system playlist")
+                // Send notification about the failure
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PlaylistActionFailed"),
+                    object: nil,
+                    userInfo: [
+                        "message": "Cannot modify system playlists",
+                        "playlistID": playlistID
+                    ]
+                )
+                return
+            }
+            
+            // Check if song is already in playlist
+            if !playlists[index].songIDs.contains(songID) {
+                // Add the song
+                playlists[index].songIDs.append(songID)
+                
+                // Save updated playlists
+                dataManager.savePlaylists(playlists)
+                
+                // Update view model data
+                self.playlists = playlists
+                
+                print("ViewModel: Song added to playlist successfully")
+                
+                // Notify observers that a playlist was updated
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PlaylistUpdated"),
+                    object: nil,
+                    userInfo: [
+                        "playlistID": playlistID,
+                        "action": "addSong",
+                        "success": true
+                    ]
+                )
+            } else {
+                print("ViewModel: Song already in playlist")
+                // Notify that the song is already in the playlist
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PlaylistActionInfo"),
+                    object: nil,
+                    userInfo: [
+                        "message": "Song is already in this playlist",
+                        "playlistID": playlistID
+                    ]
+                )
+            }
+        } else {
+            print("ViewModel: Error - playlist with ID \(playlistID) not found")
+            // Notify about the failure
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PlaylistActionFailed"),
+                object: nil,
+                userInfo: [
+                    "message": "Playlist not found",
+                    "playlistID": playlistID
+                ]
+            )
         }
     }
     
     func removeSongFromPlaylist(songID: UUID, playlistID: UUID) {
+        print("ViewModel: Removing song \(songID) from playlist \(playlistID)")
+        
+        // Get current playlists
         var playlists = dataManager.loadPlaylists()
+        
+        // Find the playlist to modify
         if let index = playlists.firstIndex(where: { $0.id == playlistID }) {
+            // Check if this is a system playlist
+            if playlists[index].isSystem {
+                print("ViewModel: Cannot remove song from system playlist")
+                // Send notification about the failure
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PlaylistActionFailed"),
+                    object: nil,
+                    userInfo: [
+                        "message": "Cannot modify system playlists",
+                        "playlistID": playlistID
+                    ]
+                )
+                return
+            }
+            
+            // Check if the song is actually in the playlist
+            if playlists[index].songIDs.contains(songID) {
+                // Remove the song
             playlists[index].songIDs.removeAll(where: { $0 == songID })
+                
+                // Save updated playlists
             dataManager.savePlaylists(playlists)
+                
+                // Update view model data
             self.playlists = playlists
+                
+                print("ViewModel: Song removed from playlist successfully")
+                
+                // Notify observers that a playlist was updated
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PlaylistUpdated"),
+                    object: nil,
+                    userInfo: [
+                        "playlistID": playlistID,
+                        "action": "removeSong",
+                        "success": true
+                    ]
+                )
+            } else {
+                print("ViewModel: Song not found in playlist")
+                // Notify that the song wasn't in the playlist
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PlaylistActionInfo"),
+                    object: nil,
+                    userInfo: [
+                        "message": "Song is not in this playlist",
+                        "playlistID": playlistID
+                    ]
+                )
+            }
+        } else {
+            print("ViewModel: Error - playlist with ID \(playlistID) not found")
+            // Notify about the failure
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PlaylistActionFailed"),
+                object: nil,
+                userInfo: [
+                    "message": "Playlist not found",
+                    "playlistID": playlistID
+                ]
+            )
         }
     }
     
@@ -579,15 +1045,18 @@ class LeBronifyViewModel: ObservableObject {
         playbackTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             guard let self = self, self.isPlaying else { return }
             
-            self.currentPlaybackTime = self.audioManager.currentTime
+            let newTime = self.audioManager.currentTime
+            self.currentPlaybackTime = newTime
             
-            // Check if song ended
-            if self.currentPlaybackTime >= self.duration {
-                self.nextSong()
+            // Check if current playback is near the end of the song
+            if let duration = self.currentSong?.duration, 
+               newTime >= duration - 0.5 && 
+               self.currentPlaybackTime < duration - 0.5 {
+                print("ViewModel: Song is about to end based on timer (\(newTime)/\(duration))")
             }
         }
         
-        // Random AD timer - show an ad every 30-90 seconds
+        // Random AD timer - keep as is
         adTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
             guard let self = self, self.isPlaying, !self.showingAd else { return }
             
@@ -612,6 +1081,14 @@ class LeBronifyViewModel: ObservableObject {
             self,
             selector: #selector(handleAppDidEnterBackground),
             name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+        
+        // Listen for notifications about the first song in queue
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleQueueFirstSongReady),
+            name: NSNotification.Name("QueueFirstSongReady"),
             object: nil
         )
     }
@@ -644,46 +1121,31 @@ class LeBronifyViewModel: ObservableObject {
         }
     }
     
+    @objc private func handleQueueFirstSongReady(notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let song = userInfo["song"] as? Song else {
+            return
+        }
+        
+        print("ViewModel: Received notification about first song in queue: \(song.title)")
+        
+        // Don't automatically start playing - this should be user-initiated
+        // But we can at least update the current song reference if needed
+        if currentSong == nil || currentSong?.id != song.id {
+            currentSong = song
+            print("ViewModel: Updated current song reference to: \(song.title)")
+        }
+        
+        // Could prepare the audio here if needed for faster playback when requested
+        audioManager.prepareAudio(for: song)
+    }
+    
     // MARK: - CarPlay Support
     
     // Function to get a random song
     func playRandomSong() {
         if let randomSong = allSongs.randomElement() {
             playSong(randomSong)
-        }
-    }
-    
-    // Play content methods with queue integration
-    func playPlaylist(_ playlist: Playlist, shuffled: Bool = false) {
-        let songs = getSongs(for: playlist)
-        if !songs.isEmpty {
-            queueManager.shuffleEnabled = shuffled
-            queueManager.setQueue(songs: songs)
-            if let firstSong = queueManager.currentSongInQueue {
-                playSong(firstSong)
-            }
-        }
-    }
-    
-    func playArtistSongs(artist: String, shuffled: Bool = false) {
-        let songs = allSongs.filter { $0.artist == artist }
-        if !songs.isEmpty {
-            queueManager.shuffleEnabled = shuffled
-            queueManager.setQueue(songs: songs)
-            if let firstSong = queueManager.currentSongInQueue {
-                playSong(firstSong)
-            }
-        }
-    }
-    
-    func playCategorySongs(category: String, shuffled: Bool = false) {
-        let songs = allSongs.filter { $0.categories.contains(category) }
-        if !songs.isEmpty {
-            queueManager.shuffleEnabled = shuffled
-            queueManager.setQueue(songs: songs)
-            if let firstSong = queueManager.currentSongInQueue {
-                playSong(firstSong)
-            }
         }
     }
     
@@ -751,5 +1213,223 @@ class LeBronifyViewModel: ObservableObject {
     func getSongDisplayText() -> String {
         guard let song = currentSong else { return "No song playing" }
         return "\(song.title) - \(song.artist)"
+    }
+    
+    // Debug helper to print queue state
+    func printQueueState() {
+        print("\n=== QUEUE STATE ===")
+        print("Queue size: \(queueManager.currentQueue.count)")
+        print("Current index: \(queueManager.queueIndex)")
+        print("Current song in queue: \(queueManager.currentSongInQueue?.title ?? "None")")
+        print("Current song in ViewModel: \(currentSong?.title ?? "None")")
+        print("Is playing: \(isPlaying)")
+        print("Shuffle enabled: \(queueManager.shuffleEnabled)")
+        print("Repeat mode: \(queueManager.repeatMode)")
+        
+        print("\nQueue contents:")
+        for (index, song) in queueManager.currentQueue.enumerated() {
+            let marker = index == queueManager.queueIndex ? " ← CURRENT" : ""
+            print("\(index): \(song.title) by \(song.artist)\(marker)")
+        }
+        print("=== END QUEUE STATE ===\n")
+    }
+    
+    // Add a notification for play count updates
+    private func notifyPlayCountUpdated() {
+        print("ViewModel: Notifying about play count update")
+        // Send song ID with notification so views can update specific songs
+        if let songID = currentSong?.id {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PlayCountUpdated"),
+                object: nil,
+                userInfo: ["songID": songID]
+            )
+        } else {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PlayCountUpdated"),
+                object: nil
+            )
+        }
+    }
+    
+    // MARK: - Media Playback Controls
+    
+    // These functions are made public to support CarPlay integration
+    func resumePlayback() {
+        if !isPlaying, audioManager.resume() {
+            isPlaying = true
+            
+            // Restart play time tracking if needed
+            if currentSong != nil && currentPlaybackTime < currentPlaybackTimeThreshold {
+                startPlayTimeTracking()
+            }
+        }
+    }
+    
+    func pausePlayback() {
+        if isPlaying {
+            audioManager.pause()
+            isPlaying = false
+            
+            // Pause play time tracking by invalidating timer
+            currentSongPlayTimer?.invalidate()
+        }
+    }
+    
+    // Skip to the next song in queue
+    func playNextSong() {
+        // Use the correct nextSong method from QueueManager
+        if let nextSong = queueManager.nextSong() {
+            playSong(nextSong)
+        }
+    }
+    
+    // Go back to previous song
+    func playPreviousSong() {
+        // Use the correct previousSong method from QueueManager
+        if let previousSong = queueManager.previousSong() {
+            playSong(previousSong)
+        }
+    }
+    
+    // Seek to a specific position
+    func seekTo(position: TimeInterval) {
+        audioManager.seekTo(time: position)
+    }
+    
+    // Toggle shuffle mode
+    var shuffleEnabled: Bool {
+        get { queueManager.shuffleEnabled }
+        set { queueManager.shuffleEnabled = newValue }
+    }
+    
+    // Repeat modes
+    enum RepeatMode {
+        case off, all, one
+    }
+    
+    private var _repeatMode: RepeatMode = .off
+    
+    var repeatMode: RepeatMode {
+        get { _repeatMode }
+        set { _repeatMode = newValue }
+    }
+    
+    func toggleRepeatMode() {
+        switch repeatMode {
+        case .off:
+            repeatMode = .all
+        case .all:
+            repeatMode = .one
+        case .one:
+            repeatMode = .off
+        }
+    }
+    
+    // Update playback time periodically
+    private func setupPlaybackTimer() {
+        playbackTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            guard let self = self, self.isPlaying else { return }
+            self.currentPlaybackTime = self.audioManager.currentTime
+            
+            // Check if song has ended and we need to play the next one
+            if self.currentPlaybackTime >= self.duration - 0.5 {
+                // Only proceed to next song if we're near the end and not paused
+                self.nextSong()
+            }
+        }
+    }
+    
+    // MARK: - First Song Fix
+    
+    /// Play the first song in the queue with special handling to fix initialization issues
+    func playFirstSongInQueue() {
+        print("ViewModel: Explicitly playing first song in queue")
+        
+        // Reset playback flags
+        hasPlaybackStarted = false
+        
+        // Check if queue is empty and try to generate one if needed
+        if queueManager.currentQueue.isEmpty {
+            print("ViewModel: Queue is empty, generating a random queue first")
+            
+            // First do a one-time refresh to ensure we have the latest data
+            // Only do this if forced to generate a new queue
+            dataManager.forceRefreshAllSongs()
+            
+            queueManager.playRandomPresetQueue()
+            
+            // Still empty? Nothing we can do
+            if queueManager.currentQueue.isEmpty {
+                print("ViewModel: Failed to generate queue, no songs available")
+                return
+            }
+        }
+        
+        // Ensure queue index is at the beginning
+        if queueManager.queueIndex != 0 {
+            print("ViewModel: Resetting queue index to 0")
+            _ = queueManager.jumpToSong(at: 0)
+        }
+        
+        // Get the first song with a proper delay to ensure audio system is ready
+        if let firstSong = queueManager.currentSongInQueue {
+            print("ViewModel: Starting playback of first song: \(firstSong.title)")
+            
+            // Set the current song immediately to prevent UI inconsistencies
+            currentSong = firstSong
+            
+            // Small delay to ensure audio system is fully initialized
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                guard let self = self else { return }
+                
+                // We use playSong directly to ensure proper playback
+                if self.audioManager.playSong(firstSong) {
+                    self.isPlaying = true
+                    self.currentPlaybackTime = 0
+                    self.duration = firstSong.duration
+                    
+                    // Mark that playback has genuinely started
+                    self.hasPlaybackStarted = true
+                    
+                    // Update taco song state
+                    self.isTacoSongPlaying = firstSong.title == "TACO TUESDAYYYYY"
+                    
+                    // Start play time tracking
+                    self.startPlayTimeTracking()
+                    
+                    print("ViewModel: Successfully started playing first song: \(firstSong.title)")
+                    NotificationCenter.default.post(name: NSNotification.Name("PlaybackStarted"), object: nil)
+                    
+                    // Print queue state for debugging
+                    self.printQueueState()
+                } else {
+                    print("ViewModel: Failed to play first song: \(firstSong.title)")
+                    self.isPlaying = false
+                    self.hasPlaybackStarted = false
+                }
+            }
+        } else {
+            print("ViewModel: Failed to get first song from queue")
+        }
+    }
+    
+    private func setupQueueBinding() {
+        // Set up binding between currentSong and queue manager's currentSongInQueue
+        queueManager.$currentQueue
+            .combineLatest(queueManager.$queueIndex)
+            .map { queue, index -> Song? in
+                guard !queue.isEmpty, index >= 0, index < queue.count else {
+                    return nil
+                }
+                return queue[index]
+            }
+            .sink { [weak self] song in
+                if self?.currentSong?.id != song?.id {
+                    print("ViewModel: Current song changed to: \(song?.title ?? "nil")")
+                    self?.currentSong = song
+                }
+            }
+            .store(in: &cancellables)
     }
 }

@@ -6,12 +6,16 @@
     <key>UIBackgroundModes</key>
     <array>
         <string>audio</string>
+        <string>processing</string>
+        <string>remote-notification</string>
     </array>
     
     <!-- Siri Intent Support -->
     <key>NSUserActivityTypes</key>
     <array>
         <string>INPlayMediaIntent</string>
+        <string>INAddMediaIntent</string>
+        <string>INSearchForMediaIntent</string>
     </array>
     
     <!-- App Icon Configuration -->
@@ -68,5 +72,22 @@
             </array>
         </dict>
     </dict>
+    
+    <!-- Add the NSSupportsLiveActivities key -->
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+    
+    <!-- CarPlay support capabilities -->
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>armv7</string>
+        <string>carplay-audio</string>
+    </array>
+    
+    <!-- Add App Group sharing -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.robertwiscount.LeBronify</string>
+    </array>
 </dict>
 </plist>

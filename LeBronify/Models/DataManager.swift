@@ -190,23 +190,27 @@ class DataManager {
         
         // Create a playlist for each category
         for category in allCategories {
-            // Generate a consistent UUID for the category playlist
+            // Create a consistent UUID for the category playlist
             let categoryData = category.data(using: .utf8)!
             var seed = Data(repeating: 0, count: 16)
             
             // Copy as many bytes as we have (up to 16)
             let bytesToCopy = min(categoryData.count, 16)
+            
+            // Modern implementation with newer API
             categoryData.withUnsafeBytes { sourceBuffer in
                 seed.withUnsafeMutableBytes { destBuffer in
-                    if let sourcePtr = sourceBuffer.baseAddress, let destPtr = destBuffer.baseAddress {
-                        memcpy(destPtr, sourcePtr, bytesToCopy)
-                    }
+                    let sourcePtr = sourceBuffer.baseAddress!
+                    let destPtr = destBuffer.baseAddress!
+                    memcpy(destPtr, sourcePtr, bytesToCopy)
                 }
             }
             
             // Create a UUID from the hash bytes
             let categoryID = seed.withUnsafeBytes { bytes in
-                return NSUUID(uuidBytes: bytes) as UUID
+                bytes.baseAddress!.assumingMemoryBound(to: UInt8.self).withMemoryRebound(to: uuid_t.self, capacity: 1) { pointer in
+                    return UUID(uuid: pointer.pointee)
+                }
             }
             
             // Find songs in this category

@@ -99,19 +99,30 @@ class SongManager {
             // Get full path for audio file reference (including subdirectory if needed)
             let audioFilePath = inSubDirectory != nil ? "\(inSubDirectory!)/\(filename)" : filename
             
-            // Get audio duration - properly using AVAsset
+            // Get audio duration - using AVURLAsset instead of deprecated AVAsset(url:)
             var duration: TimeInterval = 0
-            let asset = AVAsset(url: url)
-            let durationTime = asset.duration
-            duration = CMTimeGetSeconds(durationTime)
+            let asset = AVURLAsset(url: url)
             
-            // Use estimated duration only if we couldn't determine actual duration
-            if duration <= 0 {
-                duration = TimeInterval.random(in: 120...240) // 2-4 minutes as fallback
-                print("Warning: Could not determine duration for \(filename), using estimate: \(duration)s")
-            } else {
-                print("Found duration for \(filename): \(duration)s")
+            // Use async/await to get duration instead of deprecated duration property
+            Task {
+                do {
+                    let durationValue = try await asset.load(.duration)
+                    duration = CMTimeGetSeconds(durationValue)
+                    
+                    // Update the song with the correct duration once loaded
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("SongDurationUpdated"),
+                        object: nil,
+                        userInfo: ["songID": songId, "duration": duration]
+                    )
+                } catch {
+                    print("Error loading duration for \(filename): \(error)")
+                }
             }
+            
+            // Use estimated duration as initial value - will be updated when actual duration is loaded
+            duration = TimeInterval.random(in: 120...240) // 2-4 minutes as fallback
+            print("Using initial duration estimate for \(filename): \(duration)s")
             
             // Create a Song object
             let song = Song(
@@ -142,17 +153,21 @@ class SongManager {
         
         // Copy as many bytes as we have (up to 16)
         let bytesToCopy = min(data.count, 16)
+        
+        // Modern implementation with newer API
         data.withUnsafeBytes { sourceBuffer in
             seed.withUnsafeMutableBytes { destBuffer in
-                if let sourcePtr = sourceBuffer.baseAddress, let destPtr = destBuffer.baseAddress {
-                    memcpy(destPtr, sourcePtr, bytesToCopy)
-                }
+                let sourcePtr = sourceBuffer.baseAddress!
+                let destPtr = destBuffer.baseAddress!
+                memcpy(destPtr, sourcePtr, bytesToCopy)
             }
         }
         
-        // Create a UUID from the hash bytes
+        // Create a UUID from the hash bytes using modern API
         return seed.withUnsafeBytes { bytes in
-            return NSUUID(uuidBytes: bytes) as UUID
+            bytes.baseAddress!.assumingMemoryBound(to: UInt8.self).withMemoryRebound(to: uuid_t.self, capacity: 1) { pointer in
+                return UUID(uuid: pointer.pointee)
+            }
         }
     }
     

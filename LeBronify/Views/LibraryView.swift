@@ -6,6 +6,13 @@
 //
 
 import SwiftUI
+import UIKit
+
+// Import PlaylistEditorView and CustomPlaylistImageView
+
+// Since PlaylistEditorView is in the same module, we don't actually need to explicitly import it.
+// The error might be because CustomPlaylistImageView is defined in UIComponents.swift but not
+// properly recognized. Let's define it here if it's still not found after building.
 
 struct LibraryView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
@@ -14,39 +21,41 @@ struct LibraryView: View {
     @State private var sortOption: SortOption = .title
     
     // Updated to only include Playlists and Favorites
-        var tabs = ["Playlists", "Favorites"]
-        
-        var body: some View {
-            NavigationView {
-                GeometryReader { geometry in
-                    VStack(spacing: 0) {
-                        Rectangle()
-                            .fill(Color.clear)
-                            .frame(height: 1)
+    var tabs = ["Playlists", "Favorites"]
+    
+    var body: some View {
+        NavigationView {
+            GeometryReader { geometry in
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(height: 1)
+                    
+                    // Custom tab selector
+                    TabSelectorView(tabs: tabs, selectedTab: $selectedTab, screenWidth: geometry.size.width)
+                    
+                    // Content for selected tab - only two tabs now
+                    TabView(selection: $selectedTab) {
+                        // PLAYLISTS TAB
+                        PlaylistsTabView(showingAddPlaylist: $showingAddPlaylist)
+                            .tag(0)
                         
-                        // Custom tab selector
-                        TabSelectorView(tabs: tabs, selectedTab: $selectedTab, screenWidth: geometry.size.width)
-                        
-                        // Content for selected tab - only two tabs now
-                        TabView(selection: $selectedTab) {
-                            // PLAYLISTS TAB
-                            PlaylistsTabView(showingAddPlaylist: $showingAddPlaylist)
-                                .tag(0)
-                            
-                            // FAVORITES TAB
-                            FavoritesTabView(sortOption: $sortOption)
-                                .tag(1)
-                        }
-                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                        // FAVORITES TAB
+                        FavoritesTabView(sortOption: $sortOption)
+                            .tag(1)
                     }
-                    .navigationBarTitle("Your Library", displayMode: .large)
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 }
-            }
-            .sheet(isPresented: $showingAddPlaylist) {
-                AddPlaylistView(isPresented: $showingAddPlaylist)
+                .navigationBarTitle("Your Library", displayMode: .large)
             }
         }
+        .sheet(isPresented: $showingAddPlaylist) {
+            // Use PlaylistEditorViewWrapper just like in HomeView for consistency
+            PlaylistEditorViewWrapper()
+                .environmentObject(viewModel)
+        }
     }
+}
 
 // Tab selector view
 struct TabSelectorView: View {
@@ -101,20 +110,49 @@ struct PlaylistsTabView: View {
                     Button(action: {
                         showingAddPlaylist = true
                     }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.yellow)
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Create Playlist")
+                        }
+                        .font(.headline)
+                        .foregroundColor(.blue)
                     }
                 }
                 .padding(.horizontal)
                 .padding(.top)
                 
                 if viewModel.playlists.isEmpty {
-                    EmptyPlaylistsView()
+                    EmptyPlaylistsView(showingAddPlaylist: $showingAddPlaylist)
                         .padding(.top, 50)
                 } else {
-                    ForEach(viewModel.playlists) { playlist in
-                        PlaylistRowView(playlist: playlist)
+                    // Separate playlists by type
+                    let systemPlaylists = viewModel.playlists.filter { $0.isSystem }
+                    let userPlaylists = viewModel.playlists.filter { !$0.isSystem }
+                    
+                    // System playlists section
+                    if !systemPlaylists.isEmpty {
+                        Text("System Playlists")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal)
+                            .padding(.top, 8)
+                        
+                        ForEach(systemPlaylists) { playlist in
+                            PlaylistRowView(playlist: playlist)
+                        }
+                    }
+                    
+                    // User playlists section
+                    if !userPlaylists.isEmpty {
+                        Text("Your Custom Playlists")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal)
+                            .padding(.top, 8)
+                        
+                        ForEach(userPlaylists) { playlist in
+                            PlaylistRowView(playlist: playlist)
+                        }
                     }
                 }
                 
@@ -130,22 +168,36 @@ struct PlaylistsTabView: View {
 
 // Empty playlists view
 struct EmptyPlaylistsView: View {
+    @EnvironmentObject var viewModel: LeBronifyViewModel
+    @Binding var showingAddPlaylist: Bool
+    
+    init(showingAddPlaylist: Binding<Bool>? = nil) {
+        self._showingAddPlaylist = showingAddPlaylist ?? .constant(false)
+    }
+    
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "music.note.list")
-                .font(.system(size: 50))
-                .foregroundColor(.gray)
-                .padding(.top, 50)
-            
-            Text("No playlists yet")
-                .font(.headline)
+                .font(.system(size: 60))
                 .foregroundColor(.gray)
             
-            Text("Create your first playlist by tapping the + button")
-                .font(.subheadline)
+            Text("You don't have any playlists yet")
+                .font(.title3)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+            
+            Button(action: {
+                showingAddPlaylist = true
+            }) {
+                HStack {
+                    Image(systemName: "plus")
+                    Text("Create a Playlist")
+                }
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+            }
         }
         .frame(maxWidth: .infinity)
     }
@@ -159,11 +211,8 @@ struct PlaylistRowView: View {
     var body: some View {
         NavigationLink(destination: PlaylistDetailView(playlist: playlist)) {
             HStack(spacing: 12) {
-                Image(playlist.coverImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 70, height: 70)
-                    .cornerRadius(6)
+                // Use the helper to get the appropriate image view
+                playlist.getImageView(size: 70)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(playlist.name)
@@ -454,76 +503,51 @@ struct SortMenuView: View {
     }
 }
 
-struct AddPlaylistView: View {
-    @EnvironmentObject var viewModel: LeBronifyViewModel
-    @Binding var isPresented: Bool
-    
-    @State private var name = ""
-    @State private var description = ""
-    @State private var selectedCoverImage = "lebron_classics" // Default cover
-    
-    // A selection of cover images to choose from
-    let coverImages = ["lebron_classics", "lebron_memes", "lebron_top", "lebron_recent", "lebron_favorites", "lebron_default", "lebron_crown", "lebron_lakers", "lebron_love", "lebron_artist"]
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Playlist Info")) {
-                    TextField("Playlist Name", text: $name)
-                    TextField("Description", text: $description)
-                }
-                
-                Section(header: Text("Cover Image")) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(coverImages, id: \.self) { imageName in
-                                Image(imageName)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 80, height: 80)
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(selectedCoverImage == imageName ? Color.yellow : Color.clear, lineWidth: 3)
-                                    )
-                                    .onTapGesture {
-                                        selectedCoverImage = imageName
-                                    }
-                            }
-                        }
-                        .padding(.vertical, 8)
-                        // Add padding at bottom for mini player
-                        if viewModel.currentSong != nil {
-                            Spacer()
-                                .frame(height: 70)
-                        }
-                    }
-                }
-            }
-            .navigationBarTitle("Create Playlist", displayMode: .inline)
-            .navigationBarItems(
-                leading: Button("Cancel") {
-                    isPresented = false
-                },
-                trailing: Button("Create") {
-                    if !name.isEmpty {
-                        viewModel.createPlaylist(
-                            name: name,
-                            description: description.isEmpty ? "My LeBron playlist" : description,
-                            coverImage: selectedCoverImage
-                        )
-                        isPresented = false
-                    }
-                }
-                .disabled(name.isEmpty)
-            )
-        }
-    }
-}
-
 struct LibraryView_Previews: PreviewProvider {
     static var previews: some View {
         LibraryView()
             .environmentObject(LeBronifyViewModel())
+    }
+}
+
+// Wrapper for PlaylistEditorView
+struct PlaylistCreatorView: View {
+    @EnvironmentObject var viewModel: LeBronifyViewModel
+    
+    var body: some View {
+        // Use this view to create a new playlist
+        // It will internally use the PlaylistEditorView from the other file
+        VStack {
+            // This view structure should match what's in PlaylistEditorView.swift
+            NavigationView {
+                ZStack {
+                    // Background gradient
+                    LinearGradient(gradient: Gradient(colors: [Color.purple.opacity(0.7), Color.blue.opacity(0.5)]), 
+                                   startPoint: .top, endPoint: .bottom)
+                        .ignoresSafeArea()
+                    
+                    // Main content (simplified version)
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // Form fields and controls would go here
+                            // For now just showing a message
+                            Text("Create a New Playlist")
+                                .font(.title)
+                                .foregroundColor(.white)
+                                .padding()
+                            
+                            // Show message to call the developer to fix the issue
+                            Text("This is a temporary workaround. Please rebuild the app to use the full playlist editor.")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                                .padding()
+                        }
+                    }
+                }
+                .navigationTitle("Create Playlist")
+                .navigationBarTitleDisplayMode(.inline)
+            }
+        }
     }
 }
