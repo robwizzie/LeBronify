@@ -100,9 +100,8 @@ struct MainTabView: View {
                 VStack(spacing: 0) {
                     Spacer()
                     MiniPlayerView(selectedTab: $selectedTab)
-                        .padding(.bottom, 49) // standard tab bar height
                 }
-                .ignoresSafeArea(edges: .bottom)
+                .padding(.bottom, 50)
                 .transition(.move(edge: .bottom))
             }
         }
