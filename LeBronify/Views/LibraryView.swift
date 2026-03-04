@@ -111,7 +111,7 @@ struct PlaylistsTabView: View {
                             Text("Create Playlist")
                         }
                         .font(.headline)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.yellow)
                     }
                 }
                 .padding(.horizontal)
@@ -175,13 +175,19 @@ struct EmptyPlaylistsView: View {
         VStack(spacing: 20) {
             Image(systemName: "music.note.list")
                 .font(.system(size: 60))
-                .foregroundColor(.gray)
-            
-            Text("You don't have any playlists yet")
+                .foregroundColor(.yellow.opacity(0.4))
+
+            Text("No playlists yet")
                 .font(.title3)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
-            
+
+            Text("Build your own lineup like LeBron builds super teams!")
+                .font(.subheadline)
+                .foregroundColor(.gray.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 30)
+
             Button(action: {
                 showingAddPlaylist = true
             }) {
@@ -190,8 +196,8 @@ struct EmptyPlaylistsView: View {
                     Text("Create a Playlist")
                 }
                 .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
+                .background(Color.yellow)
+                .foregroundColor(.black)
                 .cornerRadius(8)
             }
         }
@@ -461,14 +467,14 @@ struct EmptyFavoritesView: View {
         VStack(spacing: 20) {
             Image(systemName: "heart.slash")
                 .font(.system(size: 50))
-                .foregroundColor(.gray)
+                .foregroundColor(.yellow.opacity(0.4))
                 .padding(.top, 50)
-            
+
             Text("No favorites yet")
                 .font(.headline)
                 .foregroundColor(.gray)
-            
-            Text("Tap the heart icon on any song to add it to your favorites")
+
+            Text("Even the King has favorites.\nTap the heart on any song to crown your top picks!")
                 .font(.subheadline)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)

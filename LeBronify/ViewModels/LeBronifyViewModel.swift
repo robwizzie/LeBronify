@@ -402,7 +402,10 @@ class LeBronifyViewModel: ObservableObject {
 
             // Start audio playback with a small delay to ensure proper initialization
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                guard let self = self else { return }
+                guard let self = self else {
+                    // If self is deallocated, flag is stuck — nothing we can do
+                    return
+                }
 
                 if self.audioManager.playSong(nextSong) {
                     self.currentSong = nextSong
@@ -419,6 +422,14 @@ class LeBronifyViewModel: ObservableObject {
                     self.isPlaying = false
                 }
                 self.isTransitioningToNextSong = false
+            }
+
+            // Safety timeout: reset flag after 2 seconds in case the async block never fires
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                if self?.isTransitioningToNextSong == true {
+                    print("ViewModel: Safety timeout - resetting isTransitioningToNextSong flag")
+                    self?.isTransitioningToNextSong = false
+                }
             }
         } else {
             // End of queue reached - stop playback gracefully

@@ -410,8 +410,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Cleanup any existing timer
         widgetCheckTimer?.invalidate()
         
-        // Create a timer that runs every 0.5 seconds to check for widget actions
-        widgetCheckTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        // Create a timer that checks for widget actions (1.5s is sufficient, saves battery)
+        widgetCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             self?.processWidgetActions()
         }
     }

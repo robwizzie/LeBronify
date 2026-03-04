@@ -30,7 +30,7 @@ struct PlayerView: View {
     // Spotify-inspired dark palette
     private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
     private let cardColor = Color(red: 0.11, green: 0.11, blue: 0.11)
-    private let accentGreen = Color(red: 0.12, green: 0.84, blue: 0.38)
+    private let accentYellow = Color.yellow
 
     var body: some View {
         GeometryReader { geometry in
@@ -193,7 +193,7 @@ struct PlayerView: View {
             Button { viewModel.toggleShuffle() } label: {
                 Image(systemName: "shuffle")
                     .font(.system(size: 18))
-                    .foregroundColor(viewModel.queueManager.shuffleEnabled ? accentGreen : .white.opacity(0.6))
+                    .foregroundColor(viewModel.queueManager.shuffleEnabled ? accentYellow : .white.opacity(0.6))
             }
             .frame(maxWidth: .infinity)
 
@@ -232,7 +232,7 @@ struct PlayerView: View {
             Button { viewModel.cycleRepeatMode() } label: {
                 Image(systemName: repeatIcon)
                     .font(.system(size: 18))
-                    .foregroundColor(viewModel.queueManager.repeatMode == .off ? .white.opacity(0.6) : accentGreen)
+                    .foregroundColor(viewModel.queueManager.repeatMode == .off ? .white.opacity(0.6) : accentYellow)
             }
             .frame(maxWidth: .infinity)
         }
@@ -374,6 +374,12 @@ struct PlayerView: View {
                 .font(.system(size: 15))
                 .foregroundColor(.white.opacity(0.5))
 
+            Text("\"I'm not playing right now,\nbut I'm always ready.\"")
+                .font(.system(size: 13, weight: .medium, design: .serif))
+                .foregroundColor(.yellow.opacity(0.5))
+                .multilineTextAlignment(.center)
+                .italic()
+
             Button {
                 if let song = viewModel.allSongs.randomElement() {
                     viewModel.playSong(song)
@@ -381,13 +387,13 @@ struct PlayerView: View {
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "play.fill")
-                    Text("Play Random LeBron Hit")
+                    Text("Let The King Play")
                 }
                 .font(.system(size: 16, weight: .bold))
                 .foregroundColor(.black)
                 .padding(.horizontal, 32)
                 .padding(.vertical, 14)
-                .background(accentGreen)
+                .background(accentYellow)
                 .cornerRadius(25)
             }
             .padding(.top, 8)

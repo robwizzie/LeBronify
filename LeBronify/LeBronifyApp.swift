@@ -93,7 +93,7 @@ struct MainTabView: View {
                     }
                     .tag(2)
             }
-            .accentColor(Color(red: 0.12, green: 0.84, blue: 0.38))
+            .accentColor(.yellow)
 
             // Mini player overlay - appears above tab bar on non-player tabs
             if viewModel.currentSong != nil && selectedTab != 1 {

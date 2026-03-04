@@ -463,7 +463,7 @@ struct PlaylistDetailView: View {
                         }) {
                             Image(systemName: "pencil.circle")
                                 .font(.title)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.yellow)
                         }
                     }
                 }
@@ -480,8 +480,8 @@ struct PlaylistDetailView: View {
                             Text("Play All")
                         }
                         .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
+                        .background(Color.yellow)
+                        .foregroundColor(.black)
                         .cornerRadius(8)
                     }
                     
@@ -545,8 +545,8 @@ struct PlaylistDetailView: View {
                             }) {
                                 Text("Add Songs")
                                     .padding()
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
+                                    .background(Color.yellow)
+                                    .foregroundColor(.black)
                                     .cornerRadius(8)
                             }
                         }

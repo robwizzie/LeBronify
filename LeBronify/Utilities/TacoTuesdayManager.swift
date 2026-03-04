@@ -41,10 +41,13 @@ class TacoTuesdayManager {
         ]
     }
     
+    // Stable UUID for the Taco Tuesday song so it doesn't duplicate in the queue
+    private let tacoSongID = UUID(uuidString: "TAC0DAAY-TAC0-DAA4-LEBR-000000000023") ?? UUID()
+
     // Create the special Taco Tuesday song
     func createTacoTuesdaySong() -> Song {
         return Song(
-            id: UUID(),
+            id: tacoSongID,
             title: "TACO TUESDAYYYYY",
             artist: "LeBron James",
             albumArt: tacoTuesdayAlbumArt,
