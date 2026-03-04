@@ -338,6 +338,7 @@ struct AllSongsSection: View {
 
 struct ADOverlayView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
+    @Binding var selectedTab: Int
     @State private var dismissButtonVisible = false
     @State private var waitMessage = "AD is warming up..."
 
@@ -367,7 +368,7 @@ struct ADOverlayView: View {
                 .ignoresSafeArea()
                 .onTapGesture {
                     // Tapping background also dismisses once button is visible
-                    if dismissButtonVisible { viewModel.dismissAd() }
+                    if dismissButtonVisible { dismissAndNavigate() }
                 }
 
             VStack(spacing: 20) {
@@ -389,7 +390,7 @@ struct ADOverlayView: View {
                     .padding(.horizontal)
 
                 if dismissButtonVisible {
-                    Button { viewModel.dismissAd() } label: {
+                    Button { dismissAndNavigate() } label: {
                         Text(adDismissText)
                             .font(.system(size: 15, weight: .bold))
                             .padding(.horizontal, 24)
@@ -412,6 +413,16 @@ struct ADOverlayView: View {
             // Show dismiss button after 2 seconds - quick enough to not be annoying
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 withAnimation(.spring()) { dismissButtonVisible = true }
+            }
+        }
+    }
+
+    private func dismissAndNavigate() {
+        viewModel.dismissAd()
+        // Smoothly navigate to Now Playing after dismissing
+        if viewModel.currentSong != nil {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedTab = 1
             }
         }
     }

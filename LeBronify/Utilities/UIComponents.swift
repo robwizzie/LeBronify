@@ -324,61 +324,64 @@ struct SongCardView: View {
     }
 }
 
-// Mini player that appears at bottom of screen - Spotify-inspired design
+// Mini player that appears at bottom of screen - polished LeBronify design
 struct MiniPlayerView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
     @Environment(\.colorScheme) var colorScheme
     @Binding var selectedTab: Int
-    @State private var showingQueueView = false
 
-    private let miniPlayerBg = Color(red: 0.14, green: 0.14, blue: 0.14)
+    private let miniPlayerBg = Color(red: 0.12, green: 0.12, blue: 0.12)
 
     var body: some View {
         VStack(spacing: 0) {
-            // Thin progress bar at top
+            // Yellow progress bar at top
             GeometryReader { geo in
                 let progress = viewModel.duration > 0
                     ? viewModel.currentPlaybackTime / viewModel.duration
                     : 0.0
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.white.opacity(0.06))
                     Rectangle()
-                        .fill(Color.white.opacity(0.7))
+                        .fill(Color.yellow)
                         .frame(width: geo.size.width * progress)
                 }
             }
-            .frame(height: 2)
+            .frame(height: 3)
 
             // Main content
             HStack(spacing: 12) {
-                // Tappable song info
+                // Album art + song info - tappable to go to Now Playing
                 Button {
-                    selectedTab = 1
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedTab = 1
+                    }
                 } label: {
                     HStack(spacing: 10) {
                         if let currentSong = viewModel.currentSong {
                             Image(currentSong.albumArt)
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
-                                .frame(width: 42, height: 42)
-                                .cornerRadius(4)
+                                .frame(width: 44, height: 44)
+                                .cornerRadius(6)
+                                .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
                         } else {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.white.opacity(0.1))
-                                .frame(width: 42, height: 42)
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.white.opacity(0.08))
+                                .frame(width: 44, height: 44)
                                 .overlay(
                                     Image(systemName: "music.note")
                                         .foregroundColor(.white.opacity(0.3))
                                 )
                         }
-                        VStack(alignment: .leading, spacing: 1) {
+
+                        VStack(alignment: .leading, spacing: 2) {
                             Text(viewModel.currentSong?.title ?? "Not Playing")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
-                            Text(viewModel.currentSong?.artist ?? "")
-                                .font(.system(size: 12))
+                            Text(viewModel.currentSong?.artist ?? "LeBronify")
+                                .font(.system(size: 11))
                                 .foregroundColor(.white.opacity(0.5))
                                 .lineLimit(1)
                         }
@@ -389,30 +392,40 @@ struct MiniPlayerView: View {
 
                 Spacer()
 
-                // Compact controls
-                HStack(spacing: 20) {
+                // Playback controls
+                HStack(spacing: 18) {
+                    Button { viewModel.previousSong() } label: {
+                        Image(systemName: "backward.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.8))
+                            .frame(width: 28, height: 28)
+                    }
                     Button { viewModel.togglePlayPause() } label: {
-                        Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 32, height: 32)
+                            Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(.black)
+                                .offset(x: viewModel.isPlaying ? 0 : 1)
+                        }
                     }
                     Button { viewModel.nextSong() } label: {
                         Image(systemName: "forward.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.8))
+                            .frame(width: 28, height: 28)
                     }
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 14)
             .padding(.vertical, 8)
         }
         .background(miniPlayerBg)
-        .shadow(color: .black.opacity(0.3), radius: 8, y: -2)
-        .onTapGesture {
-            selectedTab = 1
-        }
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.4), radius: 10, y: -4)
+        .padding(.horizontal, 6)
     }
 }
 

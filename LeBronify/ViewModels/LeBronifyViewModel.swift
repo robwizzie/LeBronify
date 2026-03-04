@@ -212,9 +212,22 @@ class LeBronifyViewModel: ObservableObject {
         
         // Stop current playback before starting a new one
         audioManager.stop()
-        
-        // Have QueueManager handle the song placement properly
-        queueManager.playSongImmediately(song)
+
+        // Ensure there's always a meaningful queue context
+        // If the song isn't in the current queue, build a queue from all songs starting at this one
+        if !queueManager.currentQueue.contains(where: { $0.id == song.id }) {
+            if !allSongs.isEmpty {
+                // Build a queue from all songs with this song first, then shuffle the rest
+                var queueSongs = allSongs.filter { $0.id != song.id }.shuffled()
+                queueSongs.insert(song, at: 0)
+                queueManager.setQueue(songs: Array(queueSongs.prefix(20)))
+            } else {
+                queueManager.playSongImmediately(song)
+            }
+        } else {
+            // Song is already in queue, just jump to it
+            queueManager.playSongImmediately(song)
+        }
         
         // Update the current song immediately - this is important for the UI
         currentSong = song

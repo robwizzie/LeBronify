@@ -109,7 +109,7 @@ struct MainTabView: View {
         .overlay(
             Group {
                 if viewModel.showingAd {
-                    ADOverlayView()
+                    ADOverlayView(selectedTab: $selectedTab)
                 }
             }
         )
