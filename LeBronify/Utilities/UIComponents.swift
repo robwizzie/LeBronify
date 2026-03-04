@@ -108,7 +108,7 @@ struct SongRow: View {
                         viewModel.playNext(song)
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     } label: {
-                        Label("Play Next", systemImage: "text.insert")
+                        Label("Up Next", systemImage: "text.insert")
                     }
                     Button {
                         viewModel.addToQueue(song)
@@ -118,12 +118,12 @@ struct SongRow: View {
                     }
                     Divider()
                     Button { showingAddToPlaylist = true } label: {
-                        Label("Add to Playlist", systemImage: "plus.rectangle.on.folder")
+                        Label("Add to Playbook", systemImage: "plus.rectangle.on.folder")
                     }
                     Button { viewModel.toggleFavorite(for: song.id) } label: {
                         Label(
-                            song.isFavorite ? "Remove from Favorites" : "Add to Favorites",
-                            systemImage: song.isFavorite ? "heart.fill" : "heart"
+                            song.isFavorite ? "Remove from All-Stars" : "Crown as All-Star",
+                            systemImage: song.isFavorite ? "star.fill" : "star"
                         )
                     }
                 } label: {
@@ -746,7 +746,7 @@ struct PlaylistEditorViewWrapper: View {
                         // Create/Update button
                         Button(action: {
                             if playlistName.isEmpty {
-                                alertMessage = "Please enter a playlist name"
+                                alertMessage = "Every team needs a name, King!"
                                 showingAlert = true
                                 return
                             }

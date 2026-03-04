@@ -77,7 +77,7 @@ struct MainTabView: View {
             TabView(selection: $selectedTab) {
                 HomeView()
                     .tabItem {
-                        Label("Home", systemImage: "house.fill")
+                        Label("Home", systemImage: "crown.fill")
                     }
                     .tag(0)
 
@@ -89,7 +89,7 @@ struct MainTabView: View {
 
                 LibraryView()
                     .tabItem {
-                        Label("Library", systemImage: "rectangle.stack.fill")
+                        Label("The Vault", systemImage: "rectangle.stack.fill")
                     }
                     .tag(2)
             }

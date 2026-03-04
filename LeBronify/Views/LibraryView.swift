@@ -20,7 +20,7 @@ struct LibraryView: View {
     @State private var showingAddPlaylist = false
     @State private var sortOption: SortOption = .title
 
-    var tabs = ["Playlists", "Favorites"]
+    var tabs = ["Playbooks", "All-Stars"]
 
     private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
 
@@ -43,7 +43,7 @@ struct LibraryView: View {
                     }
                 }
             }
-            .navigationBarTitle("Your Library", displayMode: .large)
+            .navigationBarTitle("The Vault", displayMode: .large)
         }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showingAddPlaylist) {
@@ -97,7 +97,7 @@ struct PlaylistsTabView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Text("Your Playlists")
+                    Text("Your Playbooks")
                         .font(.title2)
                         .fontWeight(.bold)
                     
@@ -108,7 +108,7 @@ struct PlaylistsTabView: View {
                     }) {
                         HStack {
                             Image(systemName: "plus.circle.fill")
-                            Text("Create Playlist")
+                            Text("New Playbook")
                         }
                         .font(.headline)
                         .foregroundColor(.yellow)
@@ -177,7 +177,7 @@ struct EmptyPlaylistsView: View {
                 .font(.system(size: 60))
                 .foregroundColor(.yellow.opacity(0.4))
 
-            Text("No playlists yet")
+            Text("No playbooks yet")
                 .font(.title3)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
@@ -193,7 +193,7 @@ struct EmptyPlaylistsView: View {
             }) {
                 HStack {
                     Image(systemName: "plus")
-                    Text("Create a Playlist")
+                    Text("Draft a Playbook")
                 }
                 .padding()
                 .background(Color.yellow)
@@ -470,11 +470,11 @@ struct EmptyFavoritesView: View {
                 .foregroundColor(.yellow.opacity(0.4))
                 .padding(.top, 50)
 
-            Text("No favorites yet")
+            Text("No All-Stars yet")
                 .font(.headline)
                 .foregroundColor(.gray)
 
-            Text("Even the King has favorites.\nTap the heart on any song to crown your top picks!")
+            Text("Even the King has his favorites.\nCrown a song as an All-Star from the menu!")
                 .font(.subheadline)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)

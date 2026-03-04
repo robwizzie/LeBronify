@@ -299,7 +299,7 @@ struct PlayerView: View {
         if !upNext.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("Up Next")
+                    Text("On The Bench")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
 

@@ -535,6 +535,7 @@ class LeBronifyViewModel: ObservableObject {
     func removeFromQueue(_ song: Song) {
         // Find the song in the queue and remove it by index (skip the currently playing song)
         let upNextStartIndex = queueManager.queueIndex + 1
+        guard upNextStartIndex < queueManager.currentQueue.count else { return }
         if let idx = queueManager.currentQueue[upNextStartIndex...].firstIndex(where: { $0.id == song.id }) {
             queueManager.removeFromQueue(at: idx)
         }
@@ -1047,16 +1048,21 @@ class LeBronifyViewModel: ObservableObject {
     func showRandomAd() {
         // Use the TacoTuesday ads on Tuesday with higher probability
         if tacoManager.isTacoTuesday && Double.random(in: 0...1) < 0.4 {
-            // 40% chance to show a taco ad on Tuesday
             currentAd = tacoManager.getTacoAds().randomElement()
         } else {
-            // Use the existing AnthonyDavisAd.randomAd() method
             currentAd = AnthonyDavisAd.randomAd()
         }
-        
+
         showingAd = true
+
+        // Auto-dismiss after 8 seconds so ads never get stuck
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) { [weak self] in
+            if self?.showingAd == true {
+                self?.showingAd = false
+            }
+        }
     }
-    
+
     func dismissAd() {
         showingAd = false
     }
@@ -1084,12 +1090,12 @@ class LeBronifyViewModel: ObservableObject {
             }
         }
         
-        // Random AD timer - keep as is
-        adTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+        // Anthony Davis AD timer - less frequent so it's funny not annoying
+        adTimer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
             guard let self = self, self.isPlaying, !self.showingAd else { return }
-            
-            // 20% chance to show an ad
-            if Double.random(in: 0...1) < 0.2 && !self.isConnectedToCarPlay() {
+
+            // 15% chance to show an ad per minute
+            if Double.random(in: 0...1) < 0.15 && !self.isConnectedToCarPlay() {
                 self.showRandomAd()
             }
         }
