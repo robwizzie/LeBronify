@@ -86,7 +86,7 @@ struct QueueView: View {
                     .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("NOW PLAYING")
+                    Text("ON THE COURT")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(accentYellow)
                         .tracking(1.2)
@@ -138,7 +138,7 @@ struct QueueView: View {
         List {
             Section(header:
                 HStack {
-                    Text("UP NEXT")
+                    Text("ON THE BENCH")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white.opacity(0.6))
                         .tracking(1)

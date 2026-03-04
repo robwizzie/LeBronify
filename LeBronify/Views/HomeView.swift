@@ -37,11 +37,11 @@ struct HomeView: View {
                             SongOfDaySection()
 
                             if !viewModel.recentlyPlayedSongs.isEmpty {
-                                PlaylistRow(title: "Recently Played", songs: viewModel.recentlyPlayedSongs)
+                                PlaylistRow(title: "Recent Highlights", songs: viewModel.recentlyPlayedSongs)
                             }
 
                             if !viewModel.topHitsSongs.isEmpty {
-                                PlaylistRow(title: "Top Hits", songs: viewModel.topHitsSongs)
+                                PlaylistRow(title: "MVP Selections", songs: viewModel.topHitsSongs)
                             }
 
                             PlaylistsSection(selectedTab: $selectedTab)
@@ -198,7 +198,7 @@ struct RandomSongButton: View {
             HStack(spacing: 8) {
                 Image(systemName: "shuffle")
                     .font(.system(size: 16, weight: .bold))
-                Text("Shuffle Play")
+                Text("Let The King Decide")
                     .font(.system(size: 16, weight: .bold))
             }
             .foregroundColor(.black)
@@ -217,7 +217,7 @@ struct SongOfDaySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Song of the Day")
+            Text("LeBron's Pick of the Day")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundColor(.white)
                 .padding(.horizontal)
@@ -267,7 +267,7 @@ struct PlaylistsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Playlists")
+                Text("Playbooks")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.white)
 
@@ -278,7 +278,7 @@ struct PlaylistsSection: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "plus.circle.fill")
-                        Text("New")
+                        Text("Draft")
                     }
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white.opacity(0.6))
@@ -323,7 +323,7 @@ struct AllSongsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("All Songs")
+            Text("The Full Roster")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundColor(.white)
                 .padding(.horizontal)
@@ -338,6 +338,8 @@ struct AllSongsSection: View {
 
 struct ADOverlayView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
+    @State private var dismissButtonVisible = false
+    @State private var waitMessage = "AD is warming up..."
 
     private let dismissTexts = [
         "Trade AD to Dallas",
@@ -348,6 +350,13 @@ struct ADOverlayView: View {
         "Put AD on Injured Reserve",
     ]
 
+    private let waitMessages = [
+        "AD is warming up...",
+        "The Brow demands your attention...",
+        "AD stretching on the sideline...",
+        "Commercial timeout...",
+    ]
+
     private var adDismissText: String {
         dismissTexts.randomElement() ?? "Skip AD"
     }
@@ -356,6 +365,10 @@ struct ADOverlayView: View {
         ZStack {
             Color.black.opacity(0.85)
                 .ignoresSafeArea()
+                .onTapGesture {
+                    // Tapping background also dismisses once button is visible
+                    if dismissButtonVisible { viewModel.dismissAd() }
+                }
 
             VStack(spacing: 20) {
                 Text(viewModel.currentAd?.title ?? "AD BREAK")
@@ -366,7 +379,7 @@ struct ADOverlayView: View {
                 Image(viewModel.currentAd?.imageName ?? "anthony_davis_default")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(height: 280)
+                    .frame(height: 260)
                     .cornerRadius(12)
 
                 Text(viewModel.currentAd?.message ?? "")
@@ -375,17 +388,31 @@ struct ADOverlayView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
-                Button { viewModel.dismissAd() } label: {
-                    Text(adDismissText)
-                        .font(.system(size: 15, weight: .bold))
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(Color.yellow)
-                        .foregroundColor(.black)
-                        .cornerRadius(25)
+                if dismissButtonVisible {
+                    Button { viewModel.dismissAd() } label: {
+                        Text(adDismissText)
+                            .font(.system(size: 15, weight: .bold))
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.yellow)
+                            .foregroundColor(.black)
+                            .cornerRadius(25)
+                    }
+                    .transition(.opacity.combined(with: .scale))
+                } else {
+                    Text(waitMessage)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.4))
                 }
             }
             .padding()
+        }
+        .onAppear {
+            waitMessage = waitMessages.randomElement() ?? "AD is warming up..."
+            // Show dismiss button after 2 seconds - quick enough to not be annoying
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation(.spring()) { dismissButtonVisible = true }
+            }
         }
     }
 }
