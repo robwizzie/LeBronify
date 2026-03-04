@@ -26,8 +26,9 @@ struct PlayerView: View {
     @State private var playCountObserver: NSObjectProtocol? = nil
     @State private var activeSheet: PlayerSheetType?
     @State private var isDraggingSlider = false
+    @State private var dragPosition: Double? = nil
 
-    // Spotify-inspired dark palette
+    // LeBronify dark palette
     private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
     private let cardColor = Color(red: 0.11, green: 0.11, blue: 0.11)
     private let accentYellow = Color.yellow
@@ -47,15 +48,18 @@ struct PlayerView: View {
                     bgColor.ignoresSafeArea()
                 }
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        if let song = viewModel.currentSong {
+                if let song = viewModel.currentSong {
+                    // Use ScrollViewReader to avoid gesture conflicts
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 0) {
                             playerContent(song: song, geometry: geometry)
-                        } else {
-                            emptyState(geometry: geometry)
                         }
+                        .padding(.bottom, 100)
                     }
-                    .padding(.bottom, 100)
+                    // Disable scroll when dragging slider to prevent conflict
+                    .scrollDisabled(isDraggingSlider)
+                } else {
+                    emptyState(geometry: geometry)
                 }
             }
         }
@@ -129,10 +133,11 @@ struct PlayerView: View {
     @ViewBuilder
     private func progressBar(geometry: GeometryProxy) -> some View {
         VStack(spacing: 6) {
-            // Custom slim progress bar like Spotify
+            // Custom slim progress bar
             GeometryReader { sliderGeometry in
+                let currentTime = dragPosition ?? viewModel.currentPlaybackTime
                 let progress = viewModel.duration > 0
-                    ? viewModel.currentPlaybackTime / viewModel.duration
+                    ? currentTime / viewModel.duration
                     : 0.0
 
                 ZStack(alignment: .leading) {
@@ -146,38 +151,42 @@ struct PlayerView: View {
                         .fill(Color.white)
                         .frame(width: max(0, min(sliderGeometry.size.width * progress, sliderGeometry.size.width)), height: 4)
 
-                    // Thumb
+                    // Thumb - appears on drag
                     Circle()
                         .fill(Color.white)
                         .frame(width: isDraggingSlider ? 14 : 0, height: isDraggingSlider ? 14 : 0)
                         .offset(x: max(0, min(sliderGeometry.size.width * progress - 7, sliderGeometry.size.width - 14)))
                 }
-                .frame(height: 14)
+                .frame(height: 20)
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
                             isDraggingSlider = true
                             let fraction = max(0, min(value.location.x / sliderGeometry.size.width, 1.0))
-                            viewModel.seek(to: fraction * viewModel.duration)
+                            dragPosition = fraction * viewModel.duration
                         }
-                        .onEnded { _ in
+                        .onEnded { value in
+                            let fraction = max(0, min(value.location.x / sliderGeometry.size.width, 1.0))
+                            let seekTime = fraction * viewModel.duration
+                            viewModel.seek(to: seekTime)
+                            dragPosition = nil
                             isDraggingSlider = false
                         }
                 )
             }
-            .frame(height: 14)
+            .frame(height: 20)
             .padding(.horizontal, 24)
 
             // Time labels
             HStack {
-                Text(formatTime(viewModel.currentPlaybackTime))
+                Text(formatTime(dragPosition ?? viewModel.currentPlaybackTime))
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundColor(.white.opacity(0.5))
 
                 Spacer()
 
-                Text("-" + formatTime(max(0, viewModel.duration - viewModel.currentPlaybackTime)))
+                Text("-" + formatTime(max(0, viewModel.duration - (dragPosition ?? viewModel.currentPlaybackTime))))
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundColor(.white.opacity(0.5))
             }
@@ -245,9 +254,9 @@ struct PlayerView: View {
     private func actionRow(song: Song) -> some View {
         HStack(spacing: 0) {
             actionButton(
-                icon: song.isFavorite ? "heart.fill" : "heart",
-                label: "Favorite",
-                color: song.isFavorite ? .red : .white.opacity(0.5)
+                icon: song.isFavorite ? "star.fill" : "star",
+                label: "All-Star",
+                color: song.isFavorite ? .yellow : .white.opacity(0.5)
             ) {
                 viewModel.toggleFavorite(for: song.id)
                 if let updated = viewModel.allSongs.first(where: { $0.id == song.id }) {
@@ -259,7 +268,7 @@ struct PlayerView: View {
                 activeSheet = .queue
             }
 
-            actionButton(icon: "plus.circle", label: "Playlist", color: .white.opacity(0.5)) {
+            actionButton(icon: "plus.circle", label: "Playbook", color: .white.opacity(0.5)) {
                 activeSheet = .addToPlaylist
             }
 
