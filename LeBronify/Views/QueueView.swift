@@ -12,10 +12,10 @@ struct QueueView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var isEditing = false
 
-    // Spotify-inspired dark palette
+    // LeBronify dark palette
     private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
     private let cardColor = Color(red: 0.11, green: 0.11, blue: 0.11)
-    private let accentGreen = Color(red: 0.12, green: 0.84, blue: 0.38)
+    private let accentYellow = Color.yellow
 
     var body: some View {
         NavigationView {
@@ -88,7 +88,7 @@ struct QueueView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("NOW PLAYING")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(accentGreen)
+                        .foregroundColor(accentYellow)
                         .tracking(1.2)
 
                     Text(song.title)
@@ -158,7 +158,8 @@ struct QueueView: View {
                         .listRowSeparatorTint(Color.white.opacity(0.06))
                 }
                 .onMove { source, destination in
-                    moveQueueItem(from: source.first!, to: destination, upcoming: upcoming)
+                    guard let sourceIndex = source.first else { return }
+                    moveQueueItem(from: sourceIndex, to: destination, upcoming: upcoming)
                 }
                 .onDelete { indexSet in
                     removeSelectedItems(indexSet, upcoming: upcoming)
@@ -230,15 +231,15 @@ struct QueueView: View {
             Spacer()
             Image(systemName: "music.note.list")
                 .font(.system(size: 48))
-                .foregroundColor(.white.opacity(0.2))
+                .foregroundColor(.yellow.opacity(0.3))
 
-            Text("Queue is empty")
+            Text("The King's queue is empty")
                 .font(.system(size: 17, weight: .medium))
-                .foregroundColor(.white.opacity(0.4))
+                .foregroundColor(.white.opacity(0.5))
 
-            Text("Add songs from the library to build your queue")
+            Text("Even LeBron can't score without the ball.\nAdd some songs to get the party started!")
                 .font(.system(size: 13))
-                .foregroundColor(.white.opacity(0.25))
+                .foregroundColor(.white.opacity(0.3))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 
@@ -297,12 +298,12 @@ struct QueueView: View {
             VStack(spacing: 5) {
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundColor(isActive ? accentGreen : .white.opacity(disabled ? 0.2 : 0.6))
+                    .foregroundColor(isActive ? accentYellow : .white.opacity(disabled ? 0.2 : 0.6))
                     .frame(height: 26)
 
                 Text(label)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(isActive ? accentGreen : .white.opacity(disabled ? 0.2 : 0.4))
+                    .foregroundColor(isActive ? accentYellow : .white.opacity(disabled ? 0.2 : 0.4))
             }
             .frame(maxWidth: .infinity)
         }

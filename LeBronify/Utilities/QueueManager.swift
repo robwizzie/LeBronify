@@ -223,68 +223,55 @@ class QueueManager: ObservableObject {
     
     /// Reorder the queue by moving a song without affecting currently playing
     func moveItem(from source: Int, to destination: Int) {
-        guard source >= 0, source < currentQueue.count, 
+        guard source >= 0, source < currentQueue.count,
               destination >= 0, destination <= currentQueue.count else {
             print("QueueManager: Invalid source or destination index - source: \(source), destination: \(destination), queueSize: \(currentQueue.count)")
             return
         }
-        
+
         guard source != queueIndex else {
             print("QueueManager: Cannot move currently playing song")
             return
         }
-        
-        // Store the current song details
+
+        // No-op if source and destination are effectively the same position
+        if source == destination || source + 1 == destination {
+            print("QueueManager: Source and destination are the same, no move needed")
+            return
+        }
+
+        // Store the current song ID to re-find after move
         let currentSongID = currentSongInQueue?.id
-        let currentSongTitle = currentSongInQueue?.title ?? "Unknown"
-        
-        // Get song being moved for better logging
+
         let movingSong = currentQueue[source]
-        
         print("QueueManager: Moving song '\(movingSong.title)' from \(source) to \(destination)")
-        print("QueueManager: Current playing song: '\(currentSongTitle)' at index \(queueIndex)")
-        
-        // Perform the move operation
+
+        // Perform the move: remove then insert
         let item = currentQueue.remove(at: source)
-        
-        // Calculate actual destination accounting for removal
-        let actualDestination = min(destination, currentQueue.count)
-        
-        // Insert at the actual destination
+
+        // After removal, adjust destination if it was after the source
+        let actualDestination: Int
+        if destination > source {
+            actualDestination = min(destination - 1, currentQueue.count)
+        } else {
+            actualDestination = min(destination, currentQueue.count)
+        }
+
         currentQueue.insert(item, at: actualDestination)
-        
+
         // Update original order to maintain consistency
         if let originalSource = originalQueueOrder.firstIndex(where: { $0.id == item.id }) {
             originalQueueOrder.remove(at: originalSource)
-            let originalDestination = min(destination, originalQueueOrder.count)
-            originalQueueOrder.insert(item, at: originalDestination)
+            let originalDest = min(actualDestination, originalQueueOrder.count)
+            originalQueueOrder.insert(item, at: originalDest)
         }
-        
-        // Update queue index to maintain current song position
-        if currentSongID != nil {
-            // Moving a song affects the current index
-            if source < queueIndex && destination >= queueIndex {
-                // Moving from before current to after current - shift current down by 1
-                let oldIndex = queueIndex
-                queueIndex -= 1
-                print("QueueManager: Moving from before to after - adjusting index from \(oldIndex) to \(queueIndex)")
-            } else if source > queueIndex && destination <= queueIndex {
-                // Moving from after current to before current - shift current up by 1
-                let oldIndex = queueIndex
-                queueIndex += 1
-                print("QueueManager: Moving from after to before - adjusting index from \(oldIndex) to \(queueIndex)")
-            }
-            
-            // Re-verify current song position by finding its ID in the queue
-            if let newIndex = currentQueue.firstIndex(where: { $0.id == currentSongID }) {
-                if newIndex != queueIndex {
-                    print("QueueManager: Correcting index from \(queueIndex) to \(newIndex) to match current song")
-                    queueIndex = newIndex
-                }
-            }
+
+        // Re-find the current song's index after the move
+        if let currentSongID = currentSongID,
+           let newIndex = currentQueue.firstIndex(where: { $0.id == currentSongID }) {
+            queueIndex = newIndex
         }
-        
-        // Print the new queue state for debugging
+
         printQueueState()
     }
     

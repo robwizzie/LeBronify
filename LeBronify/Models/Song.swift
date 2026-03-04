@@ -102,6 +102,10 @@ struct AnthonyDavisAd: Identifiable {
             )
         ]
         
-        return ads.randomElement()!
+        return ads.randomElement() ?? AnthonyDavisAd(
+            title: "AD BREAK",
+            imageName: "anthony_davis_default",
+            message: "Even AD needs a break sometimes!"
+        )
     }
 }

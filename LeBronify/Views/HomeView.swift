@@ -192,7 +192,6 @@ struct HeaderView: View {
 
 struct RandomSongButton: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
-    private let accentGreen = Color(red: 0.12, green: 0.84, blue: 0.38)
 
     var body: some View {
         Button { viewModel.playRandomSong() } label: {
@@ -205,7 +204,7 @@ struct RandomSongButton: View {
             .foregroundColor(.black)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(accentGreen)
+            .background(Color.yellow)
             .cornerRadius(25)
         }
         .padding(.horizontal)
@@ -248,7 +247,7 @@ struct SongOfDaySection: View {
                     Button { viewModel.playSong(song) } label: {
                         Image(systemName: "play.circle.fill")
                             .font(.system(size: 42))
-                            .foregroundColor(Color(red: 0.12, green: 0.84, blue: 0.38))
+                            .foregroundColor(Color.yellow)
                     }
                 }
                 .padding(14)
@@ -340,6 +339,19 @@ struct AllSongsSection: View {
 struct ADOverlayView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
 
+    private let dismissTexts = [
+        "Trade AD to Dallas",
+        "Send AD to the Bench",
+        "Waive AD",
+        "AD Fouled Out - Skip",
+        "AD is Day-to-Day - Skip",
+        "Put AD on Injured Reserve",
+    ]
+
+    private var adDismissText: String {
+        dismissTexts.randomElement() ?? "Skip AD"
+    }
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.85)
@@ -364,7 +376,7 @@ struct ADOverlayView: View {
                     .padding(.horizontal)
 
                 Button { viewModel.dismissAd() } label: {
-                    Text("Skip AD (Trade to Dallas)")
+                    Text(adDismissText)
                         .font(.system(size: 15, weight: .bold))
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
