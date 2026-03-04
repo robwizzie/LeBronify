@@ -388,44 +388,28 @@ class QueueManager: ObservableObject {
         
         switch repeatMode {
         case .off:
-            // In normal mode, we move to the next song but only remove the current 
-            // after we've confirmed the next song exists
+            // In normal mode, move to the next song if available
             if !currentQueue.isEmpty {
-                // Check if we have more songs in the queue
-                if queueIndex < currentQueue.count - 1 {
-                    // We have more songs - add current to history before moving to next
-                    if let currentSong = currentSongInQueue {
-                        playHistory.append(currentSong)
-                        // Limit history size
-                        if playHistory.count > 50 {
-                            playHistory.removeFirst()
-                        }
+                // Add current to history
+                if let currentSong = currentSongInQueue {
+                    playHistory.append(currentSong)
+                    if playHistory.count > 50 {
+                        playHistory.removeFirst()
                     }
-                    
-                    // Move to the next song first
+                }
+
+                if queueIndex < currentQueue.count - 1 {
+                    // We have more songs - move to the next
                     queueIndex += 1
                     print("QueueManager: Moving to next song at index \(queueIndex)")
                     return currentSongInQueue
-                } 
-                else if queueIndex == currentQueue.count - 1 {
-                    // At the last song - add to history but keep it
-                    if let currentSong = currentSongInQueue {
-                        playHistory.append(currentSong)
-                        // Limit history size
-                        if playHistory.count > 50 {
-                            playHistory.removeFirst()
-                        }
-                    }
-                    
-                    // We're already at the last song
-                    print("QueueManager: Already at the last song")
-                    return currentSongInQueue
-                }
-                else {
-                    return nil // No more songs (shouldn't reach here)
+                } else {
+                    // At the last song - no more songs to play
+                    print("QueueManager: Reached end of queue, no more songs")
+                    return nil
                 }
             } else {
-                return nil // Queue is empty
+                return nil
             }
             
         case .all:

@@ -63,13 +63,15 @@ struct LeBronifyApp: App {
     }
 }
 
-// MainTabView includes taco rain overlay directly when taco song plays
+// MainTabView - Spotify-inspired dark tab interface
 struct MainTabView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
     @State private var selectedTab = 0
     @State private var showTacoRain = false
     @State private var tacoObserver: NSObjectProtocol? = nil
-    
+
+    private let tabBarBg = Color(red: 0.07, green: 0.07, blue: 0.07)
+
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selectedTab) {
@@ -78,27 +80,27 @@ struct MainTabView: View {
                         Label("Home", systemImage: "house.fill")
                     }
                     .tag(0)
-                
+
                 PlayerView()
                     .tabItem {
                         Label("Now Playing", systemImage: "music.note")
                     }
                     .tag(1)
-                
+
                 LibraryView()
                     .tabItem {
                         Label("Library", systemImage: "rectangle.stack.fill")
                     }
                     .tag(2)
             }
-            .accentColor(.yellow)
-            
-            // Mini player overlay with position adjustments
+            .accentColor(Color(red: 0.12, green: 0.84, blue: 0.38))
+
+            // Mini player overlay - appears above tab bar on non-player tabs
             if viewModel.currentSong != nil && selectedTab != 1 {
-                VStack {
-                    Spacer() // Push to bottom
+                VStack(spacing: 0) {
+                    Spacer()
                     MiniPlayerView(selectedTab: $selectedTab)
-                        .padding(.bottom, 80) // Add padding for tab bar
+                        .padding(.bottom, 49) // standard tab bar height
                 }
                 .ignoresSafeArea(edges: .bottom)
                 .transition(.move(edge: .bottom))
@@ -107,57 +109,10 @@ struct MainTabView: View {
         .overlay(
             Group {
                 if viewModel.showingAd {
-                    ZStack {
-                        Color.black.opacity(0.8)
-                            .edgesIgnoringSafeArea(.all)
-                        
-                        VStack(spacing: 20) {
-                            Text(viewModel.currentAd?.title ?? "AD BREAK")
-                                .font(.largeTitle)
-                                .fontWeight(.black)
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
-                            
-                            Image(viewModel.currentAd?.imageName ?? "anthony_davis_default")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(height: 300)
-                                .cornerRadius(12)
-                            
-                            Text(viewModel.currentAd?.message ?? "")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
-                                .padding()
-                            
-                            Button(action: {
-                                viewModel.dismissAd()
-                            }) {
-                                Text("Skip AD (Trade to Dallas)")
-                                    .font(.headline)
-                                    .padding()
-                                    .background(Color.yellow)
-                                    .foregroundColor(.black)
-                                    .cornerRadius(10)
-                            }
-                        }
-                        .padding()
-                        .zIndex(100) // Ensure AD appears above everything
-                    }
+                    ADOverlayView()
                 }
             }
         )
-        .onAppear {
-            // Set up notification observer for taco song state changes
-            setupTacoNotifications()
-        }
-        .onDisappear {
-            // Clean up notification observer
-            if let observer = tacoObserver {
-                NotificationCenter.default.removeObserver(observer)
-                tacoObserver = nil
-            }
-        }
         .overlay(
             Group {
                 if showTacoRain && TacoTuesdayManager.shared.isTacoTuesday {
@@ -168,30 +123,25 @@ struct MainTabView: View {
                 }
             }
         )
+        .preferredColorScheme(.dark)
+        .onAppear { setupTacoNotifications() }
+        .onDisappear {
+            if let observer = tacoObserver {
+                NotificationCenter.default.removeObserver(observer)
+                tacoObserver = nil
+            }
+        }
     }
-    
-    // Set up notification observers for taco song state
+
     private func setupTacoNotifications() {
-        // Store the observer so we can remove it later
         tacoObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("TacoSongStateChanged"),
-            object: nil,
-            queue: .main
+            object: nil, queue: .main
         ) { notification in
             guard let userInfo = notification.userInfo,
-                  let isPlaying = userInfo["isPlaying"] as? Bool else {
-                return
-            }
-            
-            // Only show tacos when taco song is actively playing
-            if self.viewModel.isTacoSongPlaying && isPlaying {
-                withAnimation {
-                    self.showTacoRain = true
-                }
-            } else {
-                withAnimation {
-                    self.showTacoRain = false
-                }
+                  let isPlaying = userInfo["isPlaying"] as? Bool else { return }
+            withAnimation {
+                self.showTacoRain = self.viewModel.isTacoSongPlaying && isPlaying
             }
         }
     }

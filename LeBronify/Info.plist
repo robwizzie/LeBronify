@@ -19,6 +19,8 @@
     </array>
     
     <!-- App Icon Configuration -->
+    <!-- Primary icon is managed by the asset catalog (AppIcon.appiconset) -->
+    <!-- Only alternate icons need to be declared here for setAlternateIconName -->
     <key>CFBundleIcons</key>
     <dict>
         <key>CFBundleAlternateIcons</key>
@@ -27,18 +29,11 @@
             <dict>
                 <key>CFBundleIconFiles</key>
                 <array>
-                    <string>taco-tuesday</string>
+                    <string>TacoTuesdayIcon</string>
                 </array>
                 <key>UIPrerenderedIcon</key>
                 <false/>
             </dict>
-        </dict>
-        <key>CFBundlePrimaryIcon</key>
-        <dict>
-            <key>CFBundleIconFiles</key>
-            <array>
-                <string>AppIcon</string>
-            </array>
         </dict>
     </dict>
     

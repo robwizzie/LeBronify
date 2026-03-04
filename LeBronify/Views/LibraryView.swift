@@ -19,38 +19,34 @@ struct LibraryView: View {
     @State private var selectedTab = 0
     @State private var showingAddPlaylist = false
     @State private var sortOption: SortOption = .title
-    
-    // Updated to only include Playlists and Favorites
+
     var tabs = ["Playlists", "Favorites"]
-    
+
+    private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
+
     var body: some View {
         NavigationView {
-            GeometryReader { geometry in
-                VStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.clear)
-                        .frame(height: 1)
-                    
-                    // Custom tab selector
-                    TabSelectorView(tabs: tabs, selectedTab: $selectedTab, screenWidth: geometry.size.width)
-                    
-                    // Content for selected tab - only two tabs now
-                    TabView(selection: $selectedTab) {
-                        // PLAYLISTS TAB
-                        PlaylistsTabView(showingAddPlaylist: $showingAddPlaylist)
-                            .tag(0)
-                        
-                        // FAVORITES TAB
-                        FavoritesTabView(sortOption: $sortOption)
-                            .tag(1)
+            ZStack {
+                bgColor.ignoresSafeArea()
+
+                GeometryReader { geometry in
+                    VStack(spacing: 0) {
+                        TabSelectorView(tabs: tabs, selectedTab: $selectedTab, screenWidth: geometry.size.width)
+
+                        TabView(selection: $selectedTab) {
+                            PlaylistsTabView(showingAddPlaylist: $showingAddPlaylist)
+                                .tag(0)
+                            FavoritesTabView(sortOption: $sortOption)
+                                .tag(1)
+                        }
+                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                     }
-                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 }
-                .navigationBarTitle("Your Library", displayMode: .large)
             }
+            .navigationBarTitle("Your Library", displayMode: .large)
         }
+        .preferredColorScheme(.dark)
         .sheet(isPresented: $showingAddPlaylist) {
-            // Use PlaylistEditorViewWrapper just like in HomeView for consistency
             PlaylistEditorViewWrapper()
                 .environmentObject(viewModel)
         }
