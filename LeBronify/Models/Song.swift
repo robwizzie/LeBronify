@@ -99,9 +99,33 @@ struct AnthonyDavisAd: Identifiable {
                 title: "TIMEOUT",
                 imageName: "ad_pose4",
                 message: "Even the King needs a break. AD here to remind you to stay hydrated!"
+            ),
+            AnthonyDavisAd(
+                title: "INJURY REPORT",
+                imageName: "ad_pose1",
+                message: "AD is questionable tonight with a sore everything. But this ad? Fully healthy."
+            ),
+            AnthonyDavisAd(
+                title: "STAT CHECK",
+                imageName: "ad_pose2",
+                message: "LeBron: 40,000+ points. AD: 1 ad interrupting your music. We are not the same."
+            ),
+            AnthonyDavisAd(
+                title: "HALFTIME SHOW",
+                imageName: "ad_pose3",
+                message: "Quick halftime break brought to you by The Brow™. Now back to your regularly scheduled bangers."
+            ),
+            AnthonyDavisAd(
+                title: "AD'S CORNER",
+                imageName: "ad_pose4",
+                message: "Fun fact: LeBron has more rings than AD has games without an injury scare."
             )
         ]
-        
-        return ads.randomElement()!
+
+        return ads.randomElement() ?? AnthonyDavisAd(
+            title: "AD BREAK",
+            imageName: "anthony_davis_default",
+            message: "Even AD needs a break sometimes!"
+        )
     }
 }

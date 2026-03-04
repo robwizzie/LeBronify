@@ -91,11 +91,11 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         // Create grid with random button
         let actionsGrid = CPGridTemplate(title: "LeBronify", gridButtons: [randomAction])
         
-        // Create list template with sections
+        // Create list template with sections - return as a single list
+        // (Cannot nest CPTabBarTemplate inside another CPTabBarTemplate)
         let listTemplate = CPListTemplate(title: "Library", sections: sections)
-        
-        // Create template with both grid and list
-        return CPTabBarTemplate(templates: [actionsGrid, listTemplate])
+        listTemplate.tabImage = UIImage(systemName: "music.note.house")
+        return listTemplate
     }
     
     private func createPlaylistsTemplate() -> CPTemplate {

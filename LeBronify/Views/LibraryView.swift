@@ -19,38 +19,34 @@ struct LibraryView: View {
     @State private var selectedTab = 0
     @State private var showingAddPlaylist = false
     @State private var sortOption: SortOption = .title
-    
-    // Updated to only include Playlists and Favorites
-    var tabs = ["Playlists", "Favorites"]
-    
+
+    var tabs = ["Playbooks", "All-Stars"]
+
+    private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
+
     var body: some View {
         NavigationView {
-            GeometryReader { geometry in
-                VStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.clear)
-                        .frame(height: 1)
-                    
-                    // Custom tab selector
-                    TabSelectorView(tabs: tabs, selectedTab: $selectedTab, screenWidth: geometry.size.width)
-                    
-                    // Content for selected tab - only two tabs now
-                    TabView(selection: $selectedTab) {
-                        // PLAYLISTS TAB
-                        PlaylistsTabView(showingAddPlaylist: $showingAddPlaylist)
-                            .tag(0)
-                        
-                        // FAVORITES TAB
-                        FavoritesTabView(sortOption: $sortOption)
-                            .tag(1)
+            ZStack {
+                bgColor.ignoresSafeArea()
+
+                GeometryReader { geometry in
+                    VStack(spacing: 0) {
+                        TabSelectorView(tabs: tabs, selectedTab: $selectedTab, screenWidth: geometry.size.width)
+
+                        TabView(selection: $selectedTab) {
+                            PlaylistsTabView(showingAddPlaylist: $showingAddPlaylist)
+                                .tag(0)
+                            FavoritesTabView(sortOption: $sortOption)
+                                .tag(1)
+                        }
+                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                     }
-                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 }
-                .navigationBarTitle("Your Library", displayMode: .large)
             }
+            .navigationBarTitle("The Vault", displayMode: .large)
         }
+        .preferredColorScheme(.dark)
         .sheet(isPresented: $showingAddPlaylist) {
-            // Use PlaylistEditorViewWrapper just like in HomeView for consistency
             PlaylistEditorViewWrapper()
                 .environmentObject(viewModel)
         }
@@ -101,7 +97,7 @@ struct PlaylistsTabView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Text("Your Playlists")
+                    Text("Your Playbooks")
                         .font(.title2)
                         .fontWeight(.bold)
                     
@@ -112,10 +108,10 @@ struct PlaylistsTabView: View {
                     }) {
                         HStack {
                             Image(systemName: "plus.circle.fill")
-                            Text("Create Playlist")
+                            Text("New Playbook")
                         }
                         .font(.headline)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.yellow)
                     }
                 }
                 .padding(.horizontal)
@@ -179,23 +175,29 @@ struct EmptyPlaylistsView: View {
         VStack(spacing: 20) {
             Image(systemName: "music.note.list")
                 .font(.system(size: 60))
-                .foregroundColor(.gray)
-            
-            Text("You don't have any playlists yet")
+                .foregroundColor(.yellow.opacity(0.4))
+
+            Text("No playbooks yet")
                 .font(.title3)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
-            
+
+            Text("Build your own lineup like LeBron builds super teams!")
+                .font(.subheadline)
+                .foregroundColor(.gray.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 30)
+
             Button(action: {
                 showingAddPlaylist = true
             }) {
                 HStack {
                     Image(systemName: "plus")
-                    Text("Create a Playlist")
+                    Text("Draft a Playbook")
                 }
                 .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
+                .background(Color.yellow)
+                .foregroundColor(.black)
                 .cornerRadius(8)
             }
         }
@@ -465,14 +467,14 @@ struct EmptyFavoritesView: View {
         VStack(spacing: 20) {
             Image(systemName: "heart.slash")
                 .font(.system(size: 50))
-                .foregroundColor(.gray)
+                .foregroundColor(.yellow.opacity(0.4))
                 .padding(.top, 50)
-            
-            Text("No favorites yet")
+
+            Text("No All-Stars yet")
                 .font(.headline)
                 .foregroundColor(.gray)
-            
-            Text("Tap the heart icon on any song to add it to your favorites")
+
+            Text("Even the King has his favorites.\nCrown a song as an All-Star from the menu!")
                 .font(.subheadline)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
