@@ -10,9 +10,6 @@ import Combine
 import MediaPlayer
 import AVFoundation
 
-// Define an alias to keep backward compatibility
-typealias LeBronifyLiveActivityAttributes = Int
-
 class LeBronifyViewModel: ObservableObject {
     // Song and playlist data
     @Published var allSongs: [Song] = []
@@ -56,6 +53,9 @@ class LeBronifyViewModel: ObservableObject {
     
     // Flag to track genuine playback vs. initialization
     private var hasPlaybackStarted: Bool = false
+
+    // Guard against double-fire of nextSong (timer + audioPlayerDidFinish race)
+    private var isTransitioningToNextSong: Bool = false
     
     // Add the missing threshold constant
     private let currentPlaybackTimeThreshold: TimeInterval = 10.0 // 10 seconds threshold for play count
@@ -71,17 +71,14 @@ class LeBronifyViewModel: ObservableObject {
         // Set up essential timers and notifications
         setupTimers()
         setupNotifications()
-        
+
         // Prepare queue but don't force audio initialization
         if queueManager.currentQueue.isEmpty {
             _ = queueManager.generateRandomPresetQueue()
         }
-        
+
         // Bind to queue updates
         setupQueueBinding()
-        
-        // Set up playback timer
-        setupPlaybackTimer()
         
         // Don't do audio setup or queue manipulation on init
         // This will prevent audio session errors during startup
@@ -371,60 +368,67 @@ class LeBronifyViewModel: ObservableObject {
     
     @objc func nextSong() {
         print("ViewModel: nextSong called")
-        
+
+        // Guard against double-fire (timer + didFinishPlaying racing)
+        guard !isTransitioningToNextSong else {
+            print("ViewModel: Already transitioning to next song, ignoring duplicate call")
+            return
+        }
+        isTransitioningToNextSong = true
+
         // Reset play count tracking
         resetPlayCountTracking()
-        
+
         // First check if the queue is empty
         guard !queueManager.currentQueue.isEmpty else {
             print("ViewModel: Queue is empty, can't play next song")
+            isTransitioningToNextSong = false
             return
         }
-        
+
         // Always stop current playback first
         audioManager.stop()
-            
-        // Get the next song from queue manager - with true queue behavior, current song will be removed
+
+        // Get the next song from queue manager
         if let nextSong = queueManager.nextSong() {
             print("ViewModel: Playing next song: \(nextSong.title)")
-                
+
             // Ensure the audio session is active
             do {
                 try AVAudioSession.sharedInstance().setActive(true)
             } catch {
                 print("ViewModel: Failed to activate audio session: \(error)")
             }
-            
+
             // Start audio playback with a small delay to ensure proper initialization
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                 guard let self = self else { return }
-                
-                // Start audio playback
+
                 if self.audioManager.playSong(nextSong) {
-                    // Update ViewModel state
                     self.currentSong = nextSong
                     self.isPlaying = true
                     self.currentPlaybackTime = 0
                     self.duration = nextSong.duration
-                    
-                    // Start play time tracking
+                    self.hasPlaybackStarted = true
                     self.startPlayTimeTracking()
-                    
-                    // Update taco song state
                     self.isTacoSongPlaying = nextSong.title == "TACO TUESDAYYYYY"
-                    
-                    // Post notification that playback has started
                     NotificationCenter.default.post(name: NSNotification.Name("PlaybackStarted"), object: nil)
-                    
-                    // Print queue state for debugging
                     self.printQueueState()
                 } else {
                     print("ViewModel: Failed to play next song: \(nextSong.title)")
                     self.isPlaying = false
                 }
-                }
-            } else {
-            print("ViewModel: No next song available in queue")
+                self.isTransitioningToNextSong = false
+            }
+        } else {
+            // End of queue reached - stop playback gracefully
+            print("ViewModel: No next song available - end of queue")
+            isPlaying = false
+            currentPlaybackTime = 0
+            isTacoSongPlaying = false
+            hasPlaybackStarted = false
+            NotificationCenter.default.post(name: NSNotification.Name("PlaybackStopped"), object: nil)
+            isTransitioningToNextSong = false
         }
     }
 
@@ -515,6 +519,14 @@ class LeBronifyViewModel: ObservableObject {
     
     func removeFromQueue(at index: Int) {
         queueManager.removeFromQueue(at: index)
+    }
+
+    func removeFromQueue(_ song: Song) {
+        // Find the song in the queue and remove it by index (skip the currently playing song)
+        let upNextStartIndex = queueManager.queueIndex + 1
+        if let idx = queueManager.currentQueue[upNextStartIndex...].firstIndex(where: { $0.id == song.id }) {
+            queueManager.removeFromQueue(at: idx)
+        }
     }
     
     func clearQueue() {
@@ -1041,18 +1053,23 @@ class LeBronifyViewModel: ObservableObject {
     // MARK: - Timers and Notifications
     
     private func setupTimers() {
-        // Update playback time
+        // Update playback time and system media info
         playbackTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             guard let self = self, self.isPlaying else { return }
-            
+
             let newTime = self.audioManager.currentTime
             self.currentPlaybackTime = newTime
-            
-            // Check if current playback is near the end of the song
-            if let duration = self.currentSong?.duration, 
-               newTime >= duration - 0.5 && 
-               self.currentPlaybackTime < duration - 0.5 {
-                print("ViewModel: Song is about to end based on timer (\(newTime)/\(duration))")
+
+            // Update Now Playing info for Dynamic Island / Lock Screen
+            if let song = self.currentSong {
+                LiveActivityManager.shared.updateNowPlayingInfo(
+                    songTitle: song.title,
+                    artistName: song.artist,
+                    albumArt: song.albumArt,
+                    currentTime: newTime,
+                    duration: song.duration,
+                    isPlaying: true
+                )
             }
         }
         
@@ -1115,10 +1132,9 @@ class LeBronifyViewModel: ObservableObject {
     }
     
     @objc private func handleAppDidEnterBackground() {
-        // Make sure data is saved
-        if let currentSong = currentSong {
-            dataManager.updatePlayCount(for: currentSong.id)
-        }
+        // Only increment play count if the threshold was already reached (10+ seconds played)
+        // The timer-based tracking in startPlayTimeTracking() handles the normal case
+        // This just ensures data is persisted if the app backgrounds
     }
     
     @objc private func handleQueueFirstSongReady(notification: Notification) {
@@ -1276,20 +1292,14 @@ class LeBronifyViewModel: ObservableObject {
         }
     }
     
-    // Skip to the next song in queue
+    // Skip to the next song in queue (delegates to main nextSong which has proper guards)
     func playNextSong() {
-        // Use the correct nextSong method from QueueManager
-        if let nextSong = queueManager.nextSong() {
-            playSong(nextSong)
-        }
+        nextSong()
     }
-    
-    // Go back to previous song
+
+    // Go back to previous song (delegates to main previousSong which has proper restart logic)
     func playPreviousSong() {
-        // Use the correct previousSong method from QueueManager
-        if let previousSong = queueManager.previousSong() {
-            playSong(previousSong)
-        }
+        previousSong()
     }
     
     // Seek to a specific position
@@ -1326,19 +1336,8 @@ class LeBronifyViewModel: ObservableObject {
         }
     }
     
-    // Update playback time periodically
-    private func setupPlaybackTimer() {
-        playbackTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            guard let self = self, self.isPlaying else { return }
-            self.currentPlaybackTime = self.audioManager.currentTime
-            
-            // Check if song has ended and we need to play the next one
-            if self.currentPlaybackTime >= self.duration - 0.5 {
-                // Only proceed to next song if we're near the end and not paused
-                self.nextSong()
-            }
-        }
-    }
+    // NOTE: Removed duplicate setupPlaybackTimer() - playback timer is set up in setupTimers()
+    // Song advancement is handled by handlePlaybackFinished() notification from AVAudioPlayer
     
     // MARK: - First Song Fix
     
