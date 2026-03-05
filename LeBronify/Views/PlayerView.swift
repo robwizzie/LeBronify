@@ -30,13 +30,12 @@ struct PlayerView: View {
 
     // LeBronify dark palette
     private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
-    private let cardColor = Color(red: 0.11, green: 0.11, blue: 0.11)
     private let accentYellow = Color.yellow
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Dynamic gradient background based on current song
+                // Dynamic gradient background
                 if viewModel.currentSong != nil {
                     LinearGradient(
                         colors: [Color.yellow.opacity(0.25), bgColor],
@@ -49,15 +48,8 @@ struct PlayerView: View {
                 }
 
                 if let song = viewModel.currentSong {
-                    // Use ScrollViewReader to avoid gesture conflicts
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            playerContent(song: song, geometry: geometry)
-                        }
-                        .padding(.bottom, 100)
-                    }
-                    // Disable scroll when dragging slider to prevent conflict
-                    .scrollDisabled(isDraggingSlider)
+                    // Fixed layout - NO ScrollView so progress bar gestures work
+                    playerContent(song: song, geometry: geometry)
                 } else {
                     emptyState(geometry: geometry)
                 }
@@ -84,24 +76,28 @@ struct PlayerView: View {
         .preferredColorScheme(.dark)
     }
 
-    // MARK: - Player Content
+    // MARK: - Player Content (Fixed Layout)
 
     @ViewBuilder
     private func playerContent(song: Song, geometry: GeometryProxy) -> some View {
-        let artSize = min(geometry.size.width - 48, 340)
+        // Calculate album art size based on available space
+        let safeHeight = geometry.size.height - geometry.safeAreaInsets.top - geometry.safeAreaInsets.bottom
+        let artSize = min(geometry.size.width - 64, safeHeight * 0.38, 320)
 
-        VStack(spacing: 24) {
-            // Album art
+        VStack(spacing: 0) {
+            // Album art - takes up flexible space
             Image(song.albumArt)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: artSize, height: artSize)
                 .cornerRadius(12)
                 .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
-                .padding(.top, 24)
+                .padding(.top, 16)
+
+            Spacer().frame(minHeight: 8, maxHeight: 20)
 
             // Song info
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 Text(song.title)
                     .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.white)
@@ -114,18 +110,29 @@ struct PlayerView: View {
             }
             .padding(.horizontal, 24)
 
-            // Progress bar
+            Spacer().frame(minHeight: 8, maxHeight: 16)
+
+            // Progress bar - NO ScrollView wrapping this, so gestures work perfectly
             progressBar(geometry: geometry)
+
+            Spacer().frame(minHeight: 4, maxHeight: 12)
 
             // Main playback controls
             playbackControls
 
+            Spacer().frame(minHeight: 4, maxHeight: 12)
+
             // Secondary action row
             actionRow(song: song)
 
-            // Queue preview
+            Spacer().frame(minHeight: 8, maxHeight: 20)
+
+            // Queue preview - compact, showing next 2 songs
             queuePreview
+
+            Spacer().frame(minHeight: 0)
         }
+        .padding(.bottom, 8)
     }
 
     // MARK: - Progress Bar
@@ -133,7 +140,6 @@ struct PlayerView: View {
     @ViewBuilder
     private func progressBar(geometry: GeometryProxy) -> some View {
         VStack(spacing: 6) {
-            // Custom slim progress bar
             GeometryReader { sliderGeometry in
                 let currentTime = dragPosition ?? viewModel.currentPlaybackTime
                 let progress = viewModel.duration > 0
@@ -141,7 +147,7 @@ struct PlayerView: View {
                     : 0.0
 
                 ZStack(alignment: .leading) {
-                    // Track
+                    // Track background
                     RoundedRectangle(cornerRadius: 2)
                         .fill(Color.white.opacity(0.15))
                         .frame(height: 4)
@@ -151,13 +157,14 @@ struct PlayerView: View {
                         .fill(Color.white)
                         .frame(width: max(0, min(sliderGeometry.size.width * progress, sliderGeometry.size.width)), height: 4)
 
-                    // Thumb - appears on drag
+                    // Thumb - visible on drag
                     Circle()
                         .fill(Color.white)
                         .frame(width: isDraggingSlider ? 14 : 0, height: isDraggingSlider ? 14 : 0)
                         .offset(x: max(0, min(sliderGeometry.size.width * progress - 7, sliderGeometry.size.width - 14)))
+                        .animation(.easeOut(duration: 0.1), value: isDraggingSlider)
                 }
-                .frame(height: 20)
+                .frame(height: 24)
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0)
@@ -175,7 +182,7 @@ struct PlayerView: View {
                         }
                 )
             }
-            .frame(height: 20)
+            .frame(height: 24)
             .padding(.horizontal, 24)
 
             // Time labels
@@ -198,7 +205,6 @@ struct PlayerView: View {
 
     private var playbackControls: some View {
         HStack(spacing: 0) {
-            // Shuffle
             Button { viewModel.toggleShuffle() } label: {
                 Image(systemName: "shuffle")
                     .font(.system(size: 18))
@@ -206,7 +212,6 @@ struct PlayerView: View {
             }
             .frame(maxWidth: .infinity)
 
-            // Previous
             Button { viewModel.previousSong() } label: {
                 Image(systemName: "backward.fill")
                     .font(.system(size: 28))
@@ -214,7 +219,6 @@ struct PlayerView: View {
             }
             .frame(maxWidth: .infinity)
 
-            // Play/Pause
             Button { viewModel.togglePlayPause() } label: {
                 ZStack {
                     Circle()
@@ -229,7 +233,6 @@ struct PlayerView: View {
             }
             .frame(maxWidth: .infinity)
 
-            // Next
             Button { viewModel.nextSong() } label: {
                 Image(systemName: "forward.fill")
                     .font(.system(size: 28))
@@ -237,7 +240,6 @@ struct PlayerView: View {
             }
             .frame(maxWidth: .infinity)
 
-            // Repeat
             Button { viewModel.cycleRepeatMode() } label: {
                 Image(systemName: repeatIcon)
                     .font(.system(size: 18))
@@ -277,7 +279,6 @@ struct PlayerView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 4)
     }
 
     @ViewBuilder
@@ -297,67 +298,65 @@ struct PlayerView: View {
         }
     }
 
-    // MARK: - Queue Preview
+    // MARK: - Queue Preview (compact)
 
     @ViewBuilder
     private var queuePreview: some View {
         let queue = viewModel.queueManager.currentQueue
         let currentIdx = viewModel.queueManager.queueIndex
-        let upNext = currentIdx + 1 < queue.count ? Array(queue[(currentIdx + 1)..<min(currentIdx + 4, queue.count)]) : []
+        let upNext = currentIdx + 1 < queue.count ? Array(queue[(currentIdx + 1)..<min(currentIdx + 3, queue.count)]) : []
 
         if !upNext.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("On The Bench")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white.opacity(0.7))
 
                     Spacer()
 
                     Button {
                         activeSheet = .queue
                     } label: {
-                        Text("Open Queue")
+                        Text("See All")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(.white.opacity(0.4))
                     }
                 }
-                .padding(.horizontal, 24)
 
                 ForEach(upNext) { song in
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         Image(song.albumArt)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 34, height: 34)
                             .cornerRadius(4)
 
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 1) {
                             Text(song.title)
-                                .font(.system(size: 14))
+                                .font(.system(size: 13))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
 
                             Text(song.artist)
-                                .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.5))
+                                .font(.system(size: 11))
+                                .foregroundColor(.white.opacity(0.4))
                                 .lineLimit(1)
                         }
 
                         Spacer()
                     }
-                    .padding(.horizontal, 24)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         viewModel.playSong(song)
                     }
                 }
             }
-            .padding(.vertical, 16)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 10)
             .background(Color.white.opacity(0.04))
-            .cornerRadius(12)
+            .cornerRadius(10)
             .padding(.horizontal, 16)
-            .padding(.top, 8)
         }
     }
 
@@ -366,7 +365,7 @@ struct PlayerView: View {
     @ViewBuilder
     private func emptyState(geometry: GeometryProxy) -> some View {
         VStack(spacing: 24) {
-            Spacer().frame(height: 80)
+            Spacer()
 
             Image("lebron_default")
                 .resizable()
@@ -405,7 +404,6 @@ struct PlayerView: View {
                 .background(accentYellow)
                 .cornerRadius(25)
             }
-            .padding(.top, 8)
 
             Spacer()
         }
