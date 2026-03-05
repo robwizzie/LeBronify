@@ -8,44 +8,55 @@ document.addEventListener('DOMContentLoaded', () => {
     // Song data (matching the app's actual roster)
     // -------------------------------------------
     const songs = [
-        { title: "Ain't It Bron", artist: "ilyaugust" },
-        { title: "All LeBron Things", artist: "ilyaugust" },
-        { title: "Bring Me Back to Bron", artist: "ilyaugust" },
-        { title: "Bron Royalty", artist: "ilyaugust" },
-        { title: "Bronpeii", artist: "ilyaugust" },
-        { title: "Brons Not Brongedies", artist: "ilyaugust" },
-        { title: "Brontastic", artist: "ilyaugust" },
-        { title: "Catch a LeNade for You", artist: "ilyaugust" },
-        { title: "Dear LeBron", artist: "ilyaugust" },
-        { title: "Dunk With a Smile", artist: "ilyaugust" },
-        { title: "He Is LeBron James", artist: "LeBron Fan" },
-        { title: "He Is The King", artist: "LeBron Fan" },
-        { title: "I'm Like That's Bron", artist: "ilyaugust" },
-        { title: "I Believe in LeBron", artist: "ilyaugust" },
-        { title: "I Glazed LeBron (And I Liked It)", artist: "ilyaugust" },
-        { title: "In The Bron", artist: "ilyaugust" },
-        { title: "La Bron Bron Land", artist: "LeBron Fan" },
-        { title: "Le Bronba", artist: "ilyaugust" },
-        { title: "LeAfrica", artist: "ilyaugust" },
-        { title: "LeAll of Me", artist: "ilyaugust" },
-        { title: "LeBron, LeBron, LeBron", artist: "ilyaugust" },
-        { title: "LeBron Has Taken a Toll", artist: "ilyaugust" },
-        { title: "Marry Me LeBron", artist: "LeBron Fan" },
-        { title: "Still Into Bron", artist: "ilyaugust" },
-        { title: "Sweet Child O' Bron", artist: "LeBron Fan" },
-        { title: "The King of My Heart", artist: "ilyaugust" },
-        { title: "LeBronda", artist: "ilyaugust" },
-        { title: "On Bron", artist: "ilyaugust" },
-        { title: "LeRude Boy", artist: "ilyaugust" },
-        { title: "LeSenorita", artist: "ilyaugust" },
-        { title: "Where Is The Bron", artist: "ilyaugust" },
-        { title: "TACO TUESDAYYYYY", artist: "LeBron James" },
-    ];
-
-    // Emoji icons for song cards
-    const songEmojis = [
-        '&#x1F3C0;', '&#x1F451;', '&#x1F3B5;', '&#x1F525;',
-        '&#x1F3B6;', '&#x2B50;', '&#x1F4AA;', '&#x1F3C6;'
+        { title: "Ain't It Bron", artist: "hen.bouselog", image: "ain't_it_bron.png" },
+        { title: "All LeBron Things", artist: "jeremytache", image: "all_lebron_things.png" },
+        { title: "Bring Me Back To Bron", artist: "LeBron Fan", image: "bring_me_back_to_bron.png" },
+        { title: "Bron Royalty", artist: "ilyaugust", image: "bron_royalty.png" },
+        { title: "Bronpeii", artist: "ilyaugust", image: "bronpeii.png" },
+        { title: "Brons Not Brongedies", artist: "ilyaugust", image: "brons_not_brongedies.png" },
+        { title: "Brontastic", artist: "ilyaugust", image: "brontastic.png" },
+        { title: "Catch a LeNade For You", artist: "ilyaugust", image: "catch_a_lenade_for_you.png" },
+        { title: "Dear LeBron", artist: "sdotreidy", image: "dear_lebron.png" },
+        { title: "Dunk With a Smile", artist: "LeBron Fan", image: "dunk_with_a_smile.png" },
+        { title: "He Is LeBron James", artist: "My Way", image: "he_is_lebron_james.png" },
+        { title: "He Is The King", artist: "LeBron Fan", image: "he_is_the_king.png" },
+        { title: "I'm Like That's Bron", artist: "ilyaugust", image: "i'm_like_that's_bron.png" },
+        { title: "I Believe in LeBron", artist: "imakeparodyzz", image: "i_believe_in_lebron.png" },
+        { title: "I Glazed LeBron (And I Liked It)", artist: "timringling", image: "i_glazed_lebron_(and_i_liked_it).png" },
+        { title: "In The Bron", artist: "ilyaugust", image: "in_the_bron.png" },
+        { title: "La Bron Bron Land", artist: "House of Highlights", image: "la_bron_bron_land.png" },
+        { title: "Le Bronba", artist: "enrique_l_garibay", image: "le_bronba.png" },
+        { title: "LeAfrica", artist: "standleyjohnsonmusic", image: "leafrica.png" },
+        { title: "LeAll of Me", artist: "musicbykidb", image: "leall_of_me.png" },
+        { title: "LeBron, LeBron, LeBron", artist: "LeBron Fan", image: "lebron,_lebron,_lebron.png" },
+        { title: "LeBron Has Taken a Toll", artist: "ilyaugust", image: "lebron_has_taken_a_toll.png" },
+        { title: "LeBron That I Used to Know", artist: "LeBron Fan", image: "lebron_that_i_used_to_know.png" },
+        { title: "LeBronifornia Girls", artist: "izzydrip", image: "lebronifornia_girls.png" },
+        { title: "LeBrons Wide Open", artist: "timringling", image: "lebrons_wide_open.png" },
+        { title: "LeCurious James", artist: "leiheart.radio.station", image: "lecurious_james.png" },
+        { title: "LeEarned It", artist: "kai.so", image: "leearned_it.png" },
+        { title: "LeGolden Hour", artist: "ilyaugust", image: "legolden_hour.png" },
+        { title: "LeHips Don't Lie", artist: "ant.jr06", image: "lehips_don't_lie.png" },
+        { title: "LeLove Yourself", artist: "musicbykidb", image: "lelove_yourself.png" },
+        { title: "LeStiches", artist: "ilyaugust", image: "lestiches.png" },
+        { title: "Let LeBron Know", artist: "LeBron Fan", image: "let_lebron_know.png" },
+        { title: "Life is a LeHighway", artist: "jeppreyjung", image: "life_is_a_lehighway.png" },
+        { title: "Man On The Lakers", artist: "Talented Blake", image: "man_on_the_lakers.png" },
+        { title: "Marry Bron", artist: "ilyaugust", image: "marry_bron.png" },
+        { title: "No Bron", artist: "ilyaugust", image: "no_bron.png" },
+        { title: "Not Like Bron", artist: "vonpierreofficial", image: "not_like_bron.png" },
+        { title: "Oh Mr LeBron", artist: "LeBron Fan", image: "oh_mr_lebron.png" },
+        { title: "Romantic Bronicide", artist: "ilyaugust", image: "romantic_bronicide.png" },
+        { title: "Shut Up and Dance With Bron", artist: "ilyaugust", image: "shut_up_and_dance_with_bron.png" },
+        { title: "Still Glazing You", artist: "musicbykidb", image: "still_glazing_you.png" },
+        { title: "Sweet LeScape", artist: "ilyaugust", image: "sweet_lescape.png" },
+        { title: "TACO TUESDAYYYYY", artist: "LeBron James", image: "taco_tuesday.jpg" },
+        { title: "That's Bron", artist: "JJ Darrow", image: "that's_bron.png" },
+        { title: "That's What Makes Bron Beautiful", artist: "ilyaugust", image: "that's_what_makes_bron_beautiful.png" },
+        { title: "Thinkin Bout LeBron", artist: "ilyaugust", image: "thinkin_bout_lebron.png" },
+        { title: "This is The Bron", artist: "fanoftatum0", image: "this_is_the_bron.png" },
+        { title: "Towards The Bron", artist: "ilyaugust", image: "towards_the_bron.png" },
+        { title: "You Are My Sunshine", artist: "LeBron Fan", image: "you_are_my_sunshine.png" },
     ];
 
     // -------------------------------------------
@@ -53,16 +64,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------
     const songGrid = document.getElementById('song-grid');
     if (songGrid) {
-        // Show a subset of songs (random selection to keep it fresh)
         const shuffled = [...songs].sort(() => Math.random() - 0.5);
         const displaySongs = shuffled.slice(0, 16);
 
         displaySongs.forEach((song) => {
             const item = document.createElement('div');
             item.className = 'song-item';
-            const emoji = songEmojis[Math.floor(Math.random() * songEmojis.length)];
             item.innerHTML = `
-                <div class="song-item-art">${emoji}</div>
+                <div class="song-item-art">
+                    <img src="images/albums/${song.image}" alt="${song.title}" loading="lazy">
+                </div>
                 <div class="song-item-title">${song.title}</div>
                 <div class="song-item-artist">${song.artist}</div>
             `;
@@ -98,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
             navLinks.classList.toggle('active');
         });
 
-        // Close menu when a link is clicked
         navLinks.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
                 mobileBtn.classList.remove('active');
@@ -120,7 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
         function update(now) {
             const elapsed = now - start;
             const progress = Math.min(elapsed / duration, 1);
-            // Ease out quad
             const eased = 1 - (1 - progress) * (1 - progress);
             el.textContent = Math.round(target * eased);
             if (progress < 1) requestAnimationFrame(update);
@@ -129,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(update);
     }
 
-    // Use IntersectionObserver for stats
     const statsObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -149,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const animObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry, index) => {
             if (entry.isIntersecting) {
-                // Staggered delay based on sibling index
                 const siblings = entry.target.parentElement.querySelectorAll('[data-animate]');
                 let delay = 0;
                 siblings.forEach((sib, i) => {
@@ -175,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             const tabId = btn.dataset.tab;
 
-            // Update active states
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
