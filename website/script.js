@@ -5,7 +5,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // -------------------------------------------
-    // Song data (matching the app's actual roster)
+    // Song data (ALL songs from the app)
     // -------------------------------------------
     const songs = [
         { title: "Ain't It Bron", artist: "hen.bouselog", image: "ain't_it_bron.png" },
@@ -60,14 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     // -------------------------------------------
-    // Populate Song Grid
+    // Populate Song Grid - ALL songs
     // -------------------------------------------
     const songGrid = document.getElementById('song-grid');
     if (songGrid) {
-        const shuffled = [...songs].sort(() => Math.random() - 0.5);
-        const displaySongs = shuffled.slice(0, 16);
-
-        displaySongs.forEach((song) => {
+        songs.forEach((song) => {
             const item = document.createElement('div');
             item.className = 'song-item';
             item.innerHTML = `
@@ -225,28 +222,76 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------
-    // Mini Player progress animation
+    // Mini Player - Full functionality
     // -------------------------------------------
     const miniProgressFill = document.getElementById('mini-progress-fill');
     const miniPlayBtn = document.getElementById('mini-play-btn');
+    const miniPrevBtn = document.getElementById('mini-prev-btn');
+    const miniNextBtn = document.getElementById('mini-next-btn');
+    const miniArtImg = document.getElementById('mini-art-img');
+    const miniSongTitle = document.getElementById('mini-song-title');
+    const miniSongArtist = document.getElementById('mini-song-artist');
+
     let miniPlaying = false;
     let miniProgress = 0;
     let miniInterval = null;
+    let currentSongIndex = 10; // Start with "He Is LeBron James"
 
-    if (miniPlayBtn && miniProgressFill) {
-        miniPlayBtn.addEventListener('click', () => {
-            miniPlaying = !miniPlaying;
-            miniPlayBtn.innerHTML = miniPlaying ? '&#x23F8;' : '&#x25B6;';
+    function updateMiniPlayer() {
+        const song = songs[currentSongIndex];
+        if (miniArtImg) miniArtImg.src = `images/albums/${song.image}`;
+        if (miniArtImg) miniArtImg.alt = song.title;
+        if (miniSongTitle) miniSongTitle.textContent = song.title;
+        if (miniSongArtist) miniSongArtist.textContent = song.artist;
+        miniProgress = 0;
+        if (miniProgressFill) miniProgressFill.style.width = '0%';
+    }
 
-            if (miniPlaying) {
-                miniInterval = setInterval(() => {
-                    miniProgress += 0.3;
-                    if (miniProgress > 100) miniProgress = 0;
-                    miniProgressFill.style.width = miniProgress + '%';
-                }, 50);
-            } else {
-                clearInterval(miniInterval);
+    function startPlaying() {
+        miniPlaying = true;
+        if (miniPlayBtn) miniPlayBtn.innerHTML = '&#x23F8;';
+        if (miniInterval) clearInterval(miniInterval);
+        miniInterval = setInterval(() => {
+            miniProgress += 0.3;
+            if (miniProgress > 100) {
+                // Auto-advance to next song
+                currentSongIndex = (currentSongIndex + 1) % songs.length;
+                updateMiniPlayer();
+                miniProgress = 0;
             }
+            if (miniProgressFill) miniProgressFill.style.width = miniProgress + '%';
+        }, 50);
+    }
+
+    function stopPlaying() {
+        miniPlaying = false;
+        if (miniPlayBtn) miniPlayBtn.innerHTML = '&#x25B6;';
+        if (miniInterval) clearInterval(miniInterval);
+    }
+
+    if (miniPlayBtn) {
+        miniPlayBtn.addEventListener('click', () => {
+            if (miniPlaying) {
+                stopPlaying();
+            } else {
+                startPlaying();
+            }
+        });
+    }
+
+    if (miniPrevBtn) {
+        miniPrevBtn.addEventListener('click', () => {
+            currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+            updateMiniPlayer();
+            if (miniPlaying) startPlaying();
+        });
+    }
+
+    if (miniNextBtn) {
+        miniNextBtn.addEventListener('click', () => {
+            currentSongIndex = (currentSongIndex + 1) % songs.length;
+            updateMiniPlayer();
+            if (miniPlaying) startPlaying();
         });
     }
 
