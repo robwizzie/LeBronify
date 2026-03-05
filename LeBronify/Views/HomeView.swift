@@ -10,332 +10,248 @@ import UIKit
 
 struct HomeView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
-    @State private var scrollViewHeight: CGFloat = 0
     @Environment(\.colorScheme) var colorScheme
     @State private var selectedTab = 0
     @State private var showTacoRain = false
     @State private var shouldShowInitialTacos = true
     @State private var tacoObserver: NSObjectProtocol? = nil
     @State private var playCountObserver: NSObjectProtocol? = nil
-    
+
+    private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
+
     var body: some View {
         ZStack {
-            // Main content
             NavigationView {
-                GeometryReader { geometry in
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
+                ZStack {
+                    bgColor.ignoresSafeArea()
+
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 24) {
                             // Taco Tuesday Banner (only on Tuesdays)
                             if TacoTuesdayManager.shared.isTacoTuesday {
                                 tacoTuesdayBanner
                             }
-                            
-                            // Header
+
                             HeaderView()
-                            
-                            // Random song button
                             RandomSongButton()
-                            
-                            // LeBron song of the day
                             SongOfDaySection()
-                            
-                            // Recently played section
+
                             if !viewModel.recentlyPlayedSongs.isEmpty {
-                                PlaylistRow(
-                                    title: "Recently Played",
-                                    songs: viewModel.recentlyPlayedSongs
-                                )
+                                PlaylistRow(title: "Recent Highlights", songs: viewModel.recentlyPlayedSongs)
                             }
-                            
-                            // Top hits section
+
                             if !viewModel.topHitsSongs.isEmpty {
-                                PlaylistRow(
-                                    title: "Top Hits",
-                                    songs: viewModel.topHitsSongs
-                                )
+                                PlaylistRow(title: "MVP Selections", songs: viewModel.topHitsSongs)
                             }
-                            
-                            // Featured playlists
+
                             PlaylistsSection(selectedTab: $selectedTab)
-                            
-                            // All songs section
                             AllSongsSection()
                         }
                         .padding(.vertical)
                         .padding(.bottom, viewModel.currentSong != nil ? 80 : 0)
-                        .background(
-                            // This invisible view helps measure the content height
-                            GeometryReader { contentGeometry in
-                                Color.clear.preference(
-                                    key: ViewHeightKey.self,
-                                    value: contentGeometry.size.height
-                                )
-                            }
-                        )
-                    }
-                    .onPreferenceChange(ViewHeightKey.self) { height in
-                        scrollViewHeight = height
                     }
                 }
                 .navigationBarHidden(true)
             }
-            
-            // Taco rain overlay - only shown when the taco song is playing or initially for 10 seconds
-            if (showTacoRain || (shouldShowInitialTacos && TacoTuesdayManager.shared.isTacoTuesday)) {
+
+            if showTacoRain || (shouldShowInitialTacos && TacoTuesdayManager.shared.isTacoTuesday) {
                 TacoRain()
                     .allowsHitTesting(false)
                     .zIndex(1000)
             }
         }
+        .preferredColorScheme(.dark)
         .onAppear {
             viewModel.loadData()
-            
-            // Initial taco rain when view appears on Tuesdays
             if TacoTuesdayManager.shared.isTacoTuesday && shouldShowInitialTacos {
-                // Start initial tacos for 10 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    withAnimation {
-                        showTacoRain = true
-                    }
+                    withAnimation { showTacoRain = true }
                 }
-                
-                // Auto-hide after 10 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
-                    withAnimation {
-                        showTacoRain = false
-                        shouldShowInitialTacos = false
-                    }
+                    withAnimation { showTacoRain = false; shouldShowInitialTacos = false }
                 }
             }
-            
-            // Set up notification observer for taco song state changes
             setupTacoNotifications()
         }
-        .onDisappear {
-            // Clean up notification observers
-            cleanupObservers()
-        }
+        .onDisappear { cleanupObservers() }
     }
-    
-    // Set up notification observers for taco song state
+
     private func setupTacoNotifications() {
-        // Store the observer so we can remove it later
         tacoObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("TacoSongStateChanged"),
-            object: nil,
-            queue: .main
+            object: nil, queue: .main
         ) { notification in
             guard let userInfo = notification.userInfo,
-                  let isPlaying = userInfo["isPlaying"] as? Bool else {
-                return
-            }
-            
-            // Only show tacos when taco song is actively playing
-            if self.viewModel.isTacoSongPlaying && isPlaying {
-                withAnimation {
-                    self.showTacoRain = true
-                }
-            } else {
-                withAnimation {
-                    self.showTacoRain = false
-                }
+                  let isPlaying = userInfo["isPlaying"] as? Bool else { return }
+            withAnimation {
+                self.showTacoRain = self.viewModel.isTacoSongPlaying && isPlaying
             }
         }
-        
-        // Setup observer for play count updates
+
         playCountObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("PlayCountUpdated"),
-            object: nil,
-            queue: .main
-        ) { notification in
-            print("HomeView: Received play count update notification")
-            
-            // When a play count is updated, we need to refresh the dynamic playlists
-            // which show songs based on play count
+            object: nil, queue: .main
+        ) { _ in
             DispatchQueue.main.async {
-                // Make sure we get the latest data
                 self.viewModel.refreshDynamicPlaylists()
-                
-                // Force UI refresh for any song rows showing play counts
-                if let userInfo = notification.userInfo,
-                   let songID = userInfo["songID"] as? UUID {
-                    print("HomeView: Refreshing UI for song with ID: \(songID)")
-                }
             }
         }
     }
-    
-    // Cleanup both observers when view disappears
+
     private func cleanupObservers() {
         if let observer = tacoObserver {
             NotificationCenter.default.removeObserver(observer)
             tacoObserver = nil
         }
-        
         if let observer = playCountObserver {
             NotificationCenter.default.removeObserver(observer)
             playCountObserver = nil
         }
     }
-    
-    // Taco Tuesday Banner - styled to match the app's design
+
+    // Taco Tuesday Banner
     var tacoTuesdayBanner: some View {
         ZStack {
-            // Background with gradient similar to HeaderView
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(
                     LinearGradient(
-                        gradient: Gradient(colors: [.yellow, .orange]),
+                        colors: [Color.yellow, Color.orange],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .shadow(radius: 4)
-            
-            // Content
+
             VStack(spacing: 12) {
                 Text("TACO TUESDAYYYYY")
-                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .font(.system(size: 26, weight: .black, design: .rounded))
                     .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 2)
-                
+                    .shadow(color: .black.opacity(0.3), radius: 2, y: 2)
+
                 Image(TacoTuesdayManager.shared.tacoTuesdayAlbumArt)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(height: 120)
+                    .frame(height: 100)
                     .cornerRadius(10)
-                    .shadow(color: .black.opacity(0.3), radius: 5)
-                
-                Button(action: {
-                    let tacoSong = TacoTuesdayManager.shared.createTacoTuesdaySong()
-                    viewModel.playSong(tacoSong)
-                    
-                    // The notification system will handle showing tacos
-                }) {
-                    HStack {
+
+                Button {
+                    viewModel.playSong(TacoTuesdayManager.shared.createTacoTuesdaySong())
+                } label: {
+                    HStack(spacing: 6) {
                         Image(systemName: "play.fill")
-                            .font(.headline)
-                        Text("Play Taco Tuesday Song")
-                            .font(.headline)
+                        Text("Play Taco Tuesday")
+                            .fontWeight(.bold)
                     }
+                    .font(.system(size: 14))
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
                     .background(Color.white)
                     .foregroundColor(.orange)
                     .cornerRadius(25)
-                    .shadow(color: .black.opacity(0.2), radius: 2)
                 }
-                .padding(.bottom, 8)
             }
             .padding()
         }
-        .frame(height: 240)
+        .frame(height: 220)
         .padding(.horizontal)
-        .padding(.top, 10)
     }
 }
 
 // MARK: - Component Views
 
-// Header component
 struct HeaderView: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             Image("lebron_banner")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(height: 200)
+                .frame(height: 180)
                 .clipped()
-                .cornerRadius(12)
-            
-            // Gradient overlay for text readability
+                .cornerRadius(16)
+
             LinearGradient(
-                gradient: Gradient(colors: [.clear, .black.opacity(0.7)]),
-                startPoint: .top,
+                colors: [.clear, .black.opacity(0.8)],
+                startPoint: .center,
                 endPoint: .bottom
             )
-            .cornerRadius(12)
-            
-            // Title
-            VStack(alignment: .leading) {
+            .cornerRadius(16)
+
+            VStack(alignment: .leading, spacing: 4) {
                 Text("LEBRONIFY")
-                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .font(.system(size: 32, weight: .black, design: .rounded))
                     .foregroundColor(.white)
-                
+
                 Text("The King's Parody Collection")
-                    .font(.headline)
-                    .foregroundColor(.white.opacity(0.8))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
             }
-            .padding()
+            .padding(16)
         }
         .padding(.horizontal)
     }
 }
 
-// Random Song Button
 struct RandomSongButton: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
-    
+
     var body: some View {
-        Button(action: {
-            viewModel.playRandomSong()
-        }) {
-            HStack {
+        Button { viewModel.playRandomSong() } label: {
+            HStack(spacing: 8) {
                 Image(systemName: "shuffle")
-                    .font(.headline)
-                Text("Random LeBron Song")
-                    .font(.headline)
+                    .font(.system(size: 16, weight: .bold))
+                Text("Let The King Decide")
+                    .font(.system(size: 16, weight: .bold))
             }
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color.yellow)
             .foregroundColor(.black)
-            .cornerRadius(10)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(Color.yellow)
+            .cornerRadius(25)
         }
         .padding(.horizontal)
     }
 }
 
-// Song of the Day Section
 struct SongOfDaySection: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
-    @Environment(\.colorScheme) var colorScheme
-    
+    private let cardColor = Color(red: 0.11, green: 0.11, blue: 0.11)
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("LeBron Song of the Day")
-                .font(.title2)
-                .fontWeight(.bold)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("LeBron's Pick of the Day")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.white)
                 .padding(.horizontal)
-            
-            if let songOfTheDay = viewModel.getSongOfTheDay() {
-                HStack {
-                    Image(songOfTheDay.albumArt)
+
+            if let song = viewModel.getSongOfTheDay() {
+                HStack(spacing: 14) {
+                    Image(song.albumArt)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 80, height: 80)
+                        .frame(width: 72, height: 72)
                         .cornerRadius(8)
-                    
-                    VStack(alignment: .leading) {
-                        Text(songOfTheDay.title)
-                            .font(.headline)
-                        Text(songOfTheDay.artist)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(song.title)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+
+                        Text(song.artist)
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.5))
+                            .lineLimit(1)
                     }
-                    
+
                     Spacer()
-                    
-                    Button(action: {
-                        viewModel.playSong(songOfTheDay)
-                    }) {
+
+                    Button { viewModel.playSong(song) } label: {
                         Image(systemName: "play.circle.fill")
-                            .font(.system(size: 44))
-                            .foregroundColor(.blue)
+                            .font(.system(size: 42))
+                            .foregroundColor(Color.yellow)
                     }
                 }
-                .padding()
-                .background(colorScheme == .dark ? Color.gray.opacity(0.2) : Color.gray.opacity(0.1))
+                .padding(14)
+                .background(cardColor)
                 .cornerRadius(12)
                 .padding(.horizontal)
             }
@@ -343,67 +259,56 @@ struct SongOfDaySection: View {
     }
 }
 
-// Playlists Section
 struct PlaylistsSection: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
     @Binding var selectedTab: Int
     @State private var showingAddPlaylist = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Playlists")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
+                Text("Playbooks")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.white)
+
                 Spacer()
-                
-                Button(action: {
+
+                Button {
                     showingAddPlaylist = true
-                }) {
-                    HStack {
+                } label: {
+                    HStack(spacing: 4) {
                         Image(systemName: "plus.circle.fill")
-                        Text("New")
+                        Text("Draft")
                     }
-                    .font(.headline)
-                    .foregroundColor(.blue)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.6))
                 }
             }
             .padding(.horizontal)
-            
-            // Separate user playlists from system playlists
+
             let userPlaylists = viewModel.playlists.filter { !$0.isSystem }
-            
+
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
-                    // Only show user-created playlists here 
+                HStack(spacing: 14) {
                     ForEach(userPlaylists) { playlist in
                         NavigationLink(destination: PlaylistDetailView(playlist: playlist, selectedTab: $selectedTab)) {
-                            VStack(alignment: .leading) {
-                                // Use the helper to get the appropriate image view
-                                playlist.getImageView(size: 150)
-                                
+                            VStack(alignment: .leading, spacing: 6) {
+                                playlist.getImageView(size: 140)
+
                                 Text(playlist.name)
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
                                     .lineLimit(1)
-                                
-                                Text(playlist.description)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
-                                
-                                // Show song count
+
                                 Text("\(viewModel.getSongs(for: playlist).count) songs")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white.opacity(0.4))
                             }
-                            .frame(width: 150)
+                            .frame(width: 140)
                         }
                     }
                 }
                 .padding(.horizontal)
-                .padding(.bottom, 8)
             }
         }
         .sheet(isPresented: $showingAddPlaylist) {
@@ -413,17 +318,16 @@ struct PlaylistsSection: View {
     }
 }
 
-// All Songs Section
 struct AllSongsSection: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("All Songs")
-                .font(.title2)
-                .fontWeight(.bold)
+            Text("The Full Roster")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.white)
                 .padding(.horizontal)
-            
+
             ForEach(viewModel.allSongs) { song in
                 SongRow(song: song)
                     .padding(.horizontal)
@@ -432,52 +336,87 @@ struct AllSongsSection: View {
     }
 }
 
-// AD Overlay View
 struct ADOverlayView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
-    
+    @State private var dismissButtonVisible = false
+    @State private var waitMessage = "AD is warming up..."
+
+    private let dismissTexts = [
+        "Trade AD to Dallas",
+        "Send AD to the Bench",
+        "Waive AD",
+        "AD Fouled Out - Skip",
+        "AD is Day-to-Day - Skip",
+        "Put AD on Injured Reserve",
+    ]
+
+    private let waitMessages = [
+        "AD is warming up...",
+        "The Brow demands your attention...",
+        "AD stretching on the sideline...",
+        "Commercial timeout...",
+    ]
+
+    private var adDismissText: String {
+        dismissTexts.randomElement() ?? "Skip AD"
+    }
+
     var body: some View {
         ZStack {
-            Color.black.opacity(0.8)
-                .edgesIgnoringSafeArea(.all)
-            
+            Color.black.opacity(0.85)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    // Tapping background also dismisses once button is visible
+                    if dismissButtonVisible { viewModel.dismissAd() }
+                }
+
             VStack(spacing: 20) {
                 Text(viewModel.currentAd?.title ?? "AD BREAK")
-                    .font(.largeTitle)
-                    .fontWeight(.black)
+                    .font(.system(size: 28, weight: .black))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
-                
+
                 Image(viewModel.currentAd?.imageName ?? "anthony_davis_default")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(height: 300)
+                    .frame(height: 260)
                     .cornerRadius(12)
-                
+
                 Text(viewModel.currentAd?.message ?? "")
-                    .font(.headline)
-                    .foregroundColor(.white)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
-                    .padding()
-                
-                Button(action: {
-                    viewModel.dismissAd()
-                }) {
-                    Text("Skip AD (Trade to Dallas)")
-                        .font(.headline)
-                        .padding()
-                        .background(Color.yellow)
-                        .foregroundColor(.black)
-                        .cornerRadius(10)
+                    .padding(.horizontal)
+
+                if dismissButtonVisible {
+                    Button { viewModel.dismissAd() } label: {
+                        Text(adDismissText)
+                            .font(.system(size: 15, weight: .bold))
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.yellow)
+                            .foregroundColor(.black)
+                            .cornerRadius(25)
+                    }
+                    .transition(.opacity.combined(with: .scale))
+                } else {
+                    Text(waitMessage)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.4))
                 }
             }
             .padding()
-            .zIndex(100) // Ensure AD appears above everything
+        }
+        .onAppear {
+            waitMessage = waitMessages.randomElement() ?? "AD is warming up..."
+            // Show dismiss button after 2 seconds - quick enough to not be annoying
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation(.spring()) { dismissButtonVisible = true }
+            }
         }
     }
 }
 
-// Helper to get view height
 struct ViewHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {

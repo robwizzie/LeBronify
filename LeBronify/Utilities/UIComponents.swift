@@ -44,171 +44,126 @@ struct TopSongBadge: View {
     }
 }
 
-// Song row component for listing songs
+// Song row component for listing songs - Spotify-inspired
 struct SongRow: View {
     let song: Song
     @EnvironmentObject var viewModel: LeBronifyViewModel
-    @State private var showingOptions = false
     @State private var playCount: Int
     @State private var playCountObserver: NSObjectProtocol?
     @State private var showingAddToPlaylist = false
-    
+
     init(song: Song) {
         self.song = song
         self._playCount = State(initialValue: song.playCount)
     }
-    
+
     var body: some View {
-        Button(action: {
-            viewModel.playSong(song)
-        }) {
+        Button { viewModel.playSong(song) } label: {
             HStack(spacing: 12) {
-                // Album art with optional top rank badge
-                if let rank = song.topRank(in: viewModel.allSongs) {
-                    ZStack(alignment: .topLeading) {
-                        Image(song.albumArt)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 60, height: 60)
-                            .cornerRadius(4)
-                        
-                        TopSongBadge(rank: rank)
-                            .offset(x: -8, y: -8)
-                    }
-                } else {
+                // Album art
+                ZStack(alignment: .topLeading) {
                     Image(song.albumArt)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 60, height: 60)
+                        .frame(width: 52, height: 52)
                         .cornerRadius(4)
+
+                    if let rank = song.topRank(in: viewModel.allSongs) {
+                        TopSongBadge(rank: rank)
+                            .scaleEffect(0.7)
+                            .offset(x: -6, y: -6)
+                    }
                 }
-                
-                VStack(alignment: .leading, spacing: 4) {
+
+                VStack(alignment: .leading, spacing: 3) {
                     Text(song.title)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    HStack {
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+
+                    HStack(spacing: 6) {
                         Text(song.artist)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        // Display play count with a small icon - use local @State value for consistent updates
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.5))
+                            .lineLimit(1)
+
                         if playCount > 0 {
-                            Spacer()
-                            
-                            HStack(spacing: 4) {
-                                Image(systemName: "play.circle.fill")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                
-                                Text("\(playCount)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
+                            Text("·")
+                                .foregroundColor(.white.opacity(0.3))
+                            Text("\(playCount) plays")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.35))
                         }
                     }
                 }
-                
+
                 Spacer()
-                
-                Button(action: {
-                    viewModel.toggleFavorite(for: song.id)  // Pass song.id instead of song
-                }) {
-                    Image(systemName: song.isFavorite ? "heart.fill" : "heart")
-                        .foregroundColor(song.isFavorite ? .red : .gray)
-                }
-                .padding(.horizontal, 8)
-                
-                Button(action: {
-                    viewModel.playSong(song)
-                }) {
-                    Image(systemName: "play.circle.fill")
-                        .font(.title)
-                        .foregroundColor(.primary)
-                }
-                
-                Button(action: {
-                    showingOptions = true
-                }) {
+
+                // Ellipsis menu
+                Menu {
+                    Button { viewModel.playSong(song) } label: {
+                        Label("Play Now", systemImage: "play.fill")
+                    }
+                    Button {
+                        viewModel.playNext(song)
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    } label: {
+                        Label("Up Next", systemImage: "text.insert")
+                    }
+                    Button {
+                        viewModel.addToQueue(song)
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    } label: {
+                        Label("Add to Queue", systemImage: "list.bullet")
+                    }
+                    Divider()
+                    Button { showingAddToPlaylist = true } label: {
+                        Label("Add to Playbook", systemImage: "plus.rectangle.on.folder")
+                    }
+                    Button { viewModel.toggleFavorite(for: song.id) } label: {
+                        Label(
+                            song.isFavorite ? "Remove from All-Stars" : "Crown as All-Star",
+                            systemImage: song.isFavorite ? "star.fill" : "star"
+                        )
+                    }
+                } label: {
                     Image(systemName: "ellipsis")
-                        .foregroundColor(.primary)
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.5))
+                        .frame(width: 32, height: 32)
                 }
-                .padding(.leading, 8)
             }
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
+            .padding(.vertical, 4)
         }
         .buttonStyle(PlainButtonStyle())
-        .actionSheet(isPresented: $showingOptions) {
-            ActionSheet(
-                title: Text(song.title),
-                message: Text("Choose an action"),
-                buttons: [
-                    .default(Text("Play Now")) {
-                        viewModel.playSong(song)
-                    },
-                    .default(Text("Play Next")) {
-                        viewModel.playNext(song)
-                        // Show a brief confirmation
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
-                    },
-                    .default(Text("Add to Queue")) {
-                        viewModel.addToQueue(song)
-                        // Show a brief confirmation
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                    },
-                    .default(Text("Add to Playlist")) {
-                        showingAddToPlaylist = true
-                    },
-                    .default(Text(song.isFavorite ? "Remove from Favorites" : "Add to Favorites")) {
-                        viewModel.toggleFavorite(for: song.id)
-                    },
-                    .cancel()
-                ]
-            )
-        }
         .sheet(isPresented: $showingAddToPlaylist) {
             AddToPlaylistViewWrapper(song: song)
                 .environmentObject(viewModel)
         }
-        .onAppear {
-            // Setup observer to update when play counts change
-            setupPlayCountObserver()
-        }
+        .onAppear { setupPlayCountObserver() }
         .onDisappear {
-            // Clean up observers
             if let observer = playCountObserver {
                 NotificationCenter.default.removeObserver(observer)
                 playCountObserver = nil
             }
         }
     }
-    
+
     private func setupPlayCountObserver() {
-        // Clean up any existing observer first
         if let observer = playCountObserver {
             NotificationCenter.default.removeObserver(observer)
         }
-        
-        // Create a new observer
         playCountObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("PlayCountUpdated"),
-            object: nil,
-            queue: .main
+            object: nil, queue: .main
         ) { notification in
             if let songID = notification.userInfo?["songID"] as? UUID, songID == song.id {
-                // Direct update for this specific song
-                if let updatedSong = self.viewModel.allSongs.first(where: { $0.id == songID }) {
-                    self.playCount = updatedSong.playCount
+                if let updated = self.viewModel.allSongs.first(where: { $0.id == songID }) {
+                    self.playCount = updated.playCount
                 }
             } else {
-                // General refresh - find updated song in viewModel
-                if let updatedSong = self.viewModel.allSongs.first(where: { $0.id == song.id }) {
-                    self.playCount = updatedSong.playCount
+                if let updated = self.viewModel.allSongs.first(where: { $0.id == song.id }) {
+                    self.playCount = updated.playCount
                 }
             }
         }
@@ -220,12 +175,12 @@ struct PlaylistRow: View {
     let title: String
     let songs: [Song]
     @EnvironmentObject var viewModel: LeBronifyViewModel
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.white)
                 .padding(.horizontal)
             
             ScrollView(.horizontal, showsIndicators: false) {
@@ -257,53 +212,33 @@ struct SongCardView: View {
     }
     
     var body: some View {
-        Button(action: {
-            viewModel.playSong(song)
-        }) {
-            VStack(alignment: .leading) {
-                // Album art with optional top rank badge
-                if let rank = song.topRank(in: viewModel.allSongs), isTopHit {
-                    ZStack(alignment: .topLeading) {
-                        Image(song.albumArt)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 120, height: 120)
-                            .cornerRadius(8)
-                        
-                        TopSongBadge(rank: rank)
-                            .offset(x: -4, y: -4)
-                    }
-                    .padding(.top, 8)    // Add padding at the top to prevent badge cutoff
-                    .padding(.leading, 8) // Add padding at the left to prevent badge cutoff
-                } else {
+        Button { viewModel.playSong(song) } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                ZStack(alignment: .topLeading) {
                     Image(song.albumArt)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 120, height: 120)
+                        .frame(width: 130, height: 130)
                         .cornerRadius(8)
-                }
-                
-                Text(song.title)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-                
-                HStack {
-                    Text(song.artist)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                    
-                    if playCount > 0 {
-                        Spacer()
-                        Text("\(playCount)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+
+                    if let rank = song.topRank(in: viewModel.allSongs), isTopHit {
+                        TopSongBadge(rank: rank)
+                            .scaleEffect(0.8)
+                            .offset(x: -4, y: -4)
                     }
                 }
+
+                Text(song.title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+
+                Text(song.artist)
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.5))
+                    .lineLimit(1)
             }
-            .frame(width: 120)
+            .frame(width: 130)
         }
         .contextMenu {
             Button(action: {
@@ -389,110 +324,94 @@ struct SongCardView: View {
     }
 }
 
-// Mini player that appears at bottom of screen
+// Mini player that appears at bottom of screen - Spotify-inspired design
 struct MiniPlayerView: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
     @Environment(\.colorScheme) var colorScheme
     @Binding var selectedTab: Int
     @State private var showingQueueView = false
-    
+
+    private let miniPlayerBg = Color(red: 0.14, green: 0.14, blue: 0.14)
+
     var body: some View {
         VStack(spacing: 0) {
-            // Divider at the top for visual separation
-            Divider()
-            
-            // Main mini player content
-            HStack(spacing: 16) {
-                // Clickable area (album art and text) that navigates to Now Playing tab
-                Button(action: {
-                    // Switch to Now Playing tab (tab index 1 in your app)
+            // Thin progress bar at top
+            GeometryReader { geo in
+                let progress = viewModel.duration > 0
+                    ? viewModel.currentPlaybackTime / viewModel.duration
+                    : 0.0
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.08))
+                    Rectangle()
+                        .fill(Color.white.opacity(0.7))
+                        .frame(width: geo.size.width * progress)
+                }
+            }
+            .frame(height: 2)
+
+            // Main content
+            HStack(spacing: 12) {
+                // Tappable song info
+                Button {
                     selectedTab = 1
-                }) {
-                    HStack {
+                } label: {
+                    HStack(spacing: 10) {
                         if let currentSong = viewModel.currentSong {
                             Image(currentSong.albumArt)
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
-                                .frame(width: 50, height: 50)
+                                .frame(width: 42, height: 42)
                                 .cornerRadius(4)
                         } else {
-                            Image("lebron_default")
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 50, height: 50)
-                                .cornerRadius(4)
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.white.opacity(0.1))
+                                .frame(width: 42, height: 42)
+                                .overlay(
+                                    Image(systemName: "music.note")
+                                        .foregroundColor(.white.opacity(0.3))
+                                )
                         }
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(viewModel.currentSong?.title ?? "")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(viewModel.currentSong?.title ?? "Not Playing")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white)
                                 .lineLimit(1)
-                                .foregroundColor(.primary)
-                            
                             Text(viewModel.currentSong?.artist ?? "")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.5))
                                 .lineLimit(1)
                         }
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
-                
+
                 Spacer()
-                
-                // Queue button
-                Button(action: {
-                    showingQueueView = true
-                }) {
-                    Image(systemName: "list.bullet")
-                        .foregroundColor(.primary)
-                        .font(.system(size: 20))
-                }
-                .padding(.horizontal, 4)
-                
-                // Control buttons
-                HStack(spacing: 10) {
-                    Button(action: {
-                        viewModel.previousSong()
-                    }) {
-                        Image(systemName: "backward.fill")
-                            .foregroundColor(.primary)
+
+                // Compact controls
+                HStack(spacing: 20) {
+                    Button { viewModel.togglePlayPause() } label: {
+                        Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 20))
+                            .foregroundColor(.white)
+                            .frame(width: 32, height: 32)
                     }
-                    .padding(.horizontal, 4)
-                    
-                    Button(action: {
-                        viewModel.togglePlayPause()
-                    }) {
-                        Image(systemName: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.title)
-                            .foregroundColor(.primary)
-                    }
-                    
-                    Button(action: {
-                        viewModel.nextSong()
-                    }) {
+                    Button { viewModel.nextSong() } label: {
                         Image(systemName: "forward.fill")
-                            .foregroundColor(.primary)
-                            .font(.system(size: 20))
+                            .font(.system(size: 16))
+                            .foregroundColor(.white)
+                            .frame(width: 32, height: 32)
                     }
-                    .padding(.horizontal, 4)
                 }
             }
-            .padding()
-            .background(
-                (colorScheme == .dark ? Color(.systemBackground) : Color.white)
-            )
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
         }
-        .background(
-            (colorScheme == .dark ? Color(.systemBackground) : Color.white)
-                .edgesIgnoringSafeArea(.bottom)
-        )
-        .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: -1)
-        .sheet(isPresented: $showingQueueView) {
-            QueueView()
+        .background(miniPlayerBg)
+        .shadow(color: .black.opacity(0.3), radius: 8, y: -2)
+        .onTapGesture {
+            selectedTab = 1
         }
     }
 }
@@ -544,7 +463,7 @@ struct PlaylistDetailView: View {
                         }) {
                             Image(systemName: "pencil.circle")
                                 .font(.title)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.yellow)
                         }
                     }
                 }
@@ -561,8 +480,8 @@ struct PlaylistDetailView: View {
                             Text("Play All")
                         }
                         .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
+                        .background(Color.yellow)
+                        .foregroundColor(.black)
                         .cornerRadius(8)
                     }
                     
@@ -626,8 +545,8 @@ struct PlaylistDetailView: View {
                             }) {
                                 Text("Add Songs")
                                     .padding()
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
+                                    .background(Color.yellow)
+                                    .foregroundColor(.black)
                                     .cornerRadius(8)
                             }
                         }
@@ -827,7 +746,7 @@ struct PlaylistEditorViewWrapper: View {
                         // Create/Update button
                         Button(action: {
                             if playlistName.isEmpty {
-                                alertMessage = "Please enter a playlist name"
+                                alertMessage = "Every team needs a name, King!"
                                 showingAlert = true
                                 return
                             }
