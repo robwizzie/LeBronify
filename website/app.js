@@ -1,0 +1,770 @@
+/* ============================================
+   LEBRONIFY WEB APP - Full Music Player Engine
+   ============================================ */
+
+(function() {
+'use strict';
+
+// -------------------------------------------
+// Song Database
+// -------------------------------------------
+const SONGS = [
+    { id: 1, title: "Ain't It Bron", artist: "hen.bouselog", image: "ain't_it_bron.png", audio: "Ain't It Bron - hen.bouselog.mp3" },
+    { id: 2, title: "All LeBron Things", artist: "jeremytache", image: "all_lebron_things.png", audio: "All LeBron Things - jeremytache.mp3" },
+    { id: 3, title: "Bring Me Back To Bron", artist: "LeBron Fan", image: "bring_me_back_to_bron.png", audio: "Bring Me Back To Bron.mp3" },
+    { id: 4, title: "Bron Royalty", artist: "ilyaugust", image: "bron_royalty.png", audio: "Bron Royalty - ilyaugust.mp3" },
+    { id: 5, title: "Bronpeii", artist: "ilyaugust", image: "bronpeii.png", audio: "Bronpeii - ilyaugust.mp3" },
+    { id: 6, title: "Brons Not Brongedies", artist: "ilyaugust", image: "brons_not_brongedies.png", audio: "Brons Not Brongedies - ilyaugust.mp3" },
+    { id: 7, title: "Brontastic", artist: "ilyaugust", image: "brontastic.png", audio: "Brontastic - ilyaugust.mp3" },
+    { id: 8, title: "Catch a LeNade For You", artist: "ilyaugust", image: "catch_a_lenade_for_you.png", audio: "Catch a LeNade For You - ilyaugust.mp3" },
+    { id: 9, title: "Dear LeBron", artist: "sdotreidy", image: "dear_lebron.png", audio: "Dear LeBron - sdotreidy.mp3" },
+    { id: 10, title: "Dunk With a Smile", artist: "LeBron Fan", image: "dunk_with_a_smile.png", audio: "Dunk With a Smile.mp3" },
+    { id: 11, title: "He Is LeBron James", artist: "My Way", image: "he_is_lebron_james.png", audio: "He Is Lebron James - My Way.mp3" },
+    { id: 12, title: "He Is The King", artist: "LeBron Fan", image: "he_is_the_king.png", audio: "He is The King.mp3" },
+    { id: 13, title: "I'm Like That's Bron", artist: "ilyaugust", image: "i'm_like_that's_bron.png", audio: "I'm Like That's Bron - ilyaugust.mp3" },
+    { id: 14, title: "I Believe in LeBron", artist: "imakeparodyzz", image: "i_believe_in_lebron.png", audio: "I Believe in LeBron - imakeparodyzz.mp3" },
+    { id: 15, title: "I Glazed LeBron (And I Liked It)", artist: "timringling", image: "i_glazed_lebron_(and_i_liked_it).png", audio: "I Glazed LeBron (And I Liked It) - timringling.mp3" },
+    { id: 16, title: "In The Bron", artist: "ilyaugust", image: "in_the_bron.png", audio: "In The Bron - ilyaugust.mp3" },
+    { id: 17, title: "La Bron Bron Land", artist: "House of Highlights", image: "la_bron_bron_land.png", audio: "La Bron Bron Land - House of Highlights.mp3" },
+    { id: 18, title: "Le Bronba", artist: "enrique_l_garibay", image: "le_bronba.png", audio: "Le Bronba - enrique_l_garibay.mp3" },
+    { id: 19, title: "LeAfrica", artist: "standleyjohnsonmusic", image: "leafrica.png", audio: "LeAfrica - standleyjohnsonmusic.mp3" },
+    { id: 20, title: "LeAll of Me", artist: "musicbykidb", image: "leall_of_me.png", audio: "LeAll of Me - musicbykidb.mp3" },
+    { id: 21, title: "LeBron, LeBron, LeBron", artist: "LeBron Fan", image: "lebron,_lebron,_lebron.png", audio: "LeBron, LeBron, LeBron.mp3" },
+    { id: 22, title: "LeBron Has Taken a Toll", artist: "ilyaugust", image: "lebron_has_taken_a_toll.png", audio: "LeBron Has Taken a Toll - ilyaugust.mp3" },
+    { id: 23, title: "LeBron That I Used to Know", artist: "LeBron Fan", image: "lebron_that_i_used_to_know.png", audio: "LeBron That I Used to Know.mp3" },
+    { id: 24, title: "LeBronifornia Girls", artist: "izzydrip", image: "lebronifornia_girls.png", audio: "LeBronifornia Girls - izzydrip.mp3" },
+    { id: 25, title: "LeBrons Wide Open", artist: "timringling", image: "lebrons_wide_open.png", audio: "LeBrons Wide Open - timringling.mp3" },
+    { id: 26, title: "LeCurious James", artist: "leiheart.radio.station", image: "lecurious_james.png", audio: "LeCurious James - leiheart.radio.station.mp3" },
+    { id: 27, title: "LeEarned It", artist: "kai.so", image: "leearned_it.png", audio: "LeEarned It - kai.so.mp3" },
+    { id: 28, title: "LeGolden Hour", artist: "ilyaugust", image: "legolden_hour.png", audio: "LeGolden Hour - ilyaugust.mp3" },
+    { id: 29, title: "LeHips Don't Lie", artist: "ant.jr06", image: "lehips_don't_lie.png", audio: "LeHips Don't Lie - ant.jr06.mp3" },
+    { id: 30, title: "LeLove Yourself", artist: "musicbykidb", image: "lelove_yourself.png", audio: "LeLove Yourself - musicbykidb.mp3" },
+    { id: 31, title: "LeStiches", artist: "ilyaugust", image: "lestiches.png", audio: "LeStiches - ilyaugust.mp3" },
+    { id: 32, title: "Let LeBron Know", artist: "LeBron Fan", image: "let_lebron_know.png", audio: "Let LeBron Know.mp3" },
+    { id: 33, title: "Life is a LeHighway", artist: "jeppreyjung", image: "life_is_a_lehighway.png", audio: "Life is a LeHighway - jeppreyjung.mp3" },
+    { id: 34, title: "Man On The Lakers", artist: "Talented Blake", image: "man_on_the_lakers.png", audio: "Man On The Lakers - Talented Blake.mp3" },
+    { id: 35, title: "Marry Bron", artist: "ilyaugust", image: "marry_bron.png", audio: "Marry Bron - ilyaugust.mp3" },
+    { id: 36, title: "No Bron", artist: "ilyaugust", image: "no_bron.png", audio: "No Bron - ilyaugust.mp3" },
+    { id: 37, title: "Not Like Bron", artist: "vonpierreofficial", image: "not_like_bron.png", audio: "Not Like Bron - vonpierreofficial.mp3" },
+    { id: 38, title: "Oh Mr LeBron", artist: "LeBron Fan", image: "oh_mr_lebron.png", audio: "Oh Mr LeBron.mp3" },
+    { id: 39, title: "Romantic Bronicide", artist: "ilyaugust", image: "romantic_bronicide.png", audio: "Romantic Bronicide - ilyaugust.mp3" },
+    { id: 40, title: "Shut Up and Dance With Bron", artist: "ilyaugust", image: "shut_up_and_dance_with_bron.png", audio: "Shut Up and Dance With Bron - ilyaugust.mp3" },
+    { id: 41, title: "Still Glazing You", artist: "musicbykidb", image: "still_glazing_you.png", audio: "Still Glazing You - musicbykidb.mp3" },
+    { id: 42, title: "Sweet LeScape", artist: "ilyaugust", image: "sweet_lescape.png", audio: "Sweet LeScape - ilyaugust.mp3" },
+    { id: 43, title: "TACO TUESDAYYYYY", artist: "LeBron James", image: "taco_tuesday.jpg", audio: "Taco Tuesday.mp3" },
+    { id: 44, title: "That's Bron", artist: "JJ Darrow", image: "that's_bron.png", audio: "That's Bron - JJ Darrow.mp3" },
+    { id: 45, title: "That's What Makes Bron Beautiful", artist: "ilyaugust", image: "that's_what_makes_bron_beautiful.png", audio: "That's What Makes Bron Beautiful - ilyaugust.mp3" },
+    { id: 46, title: "Thinkin Bout LeBron", artist: "ilyaugust", image: "thinkin_bout_lebron.png", audio: "Thinkin Bout LeBron - ilyaugust.mp3" },
+    { id: 47, title: "This is The Bron", artist: "fanoftatum0", image: "this_is_the_bron.png", audio: "This is The Bron - fanoftatum0.mp3" },
+    { id: 48, title: "Towards The Bron", artist: "ilyaugust", image: "towards_the_bron.png", audio: "Towards The Bron - ilyaugust.mp3" },
+    { id: 49, title: "You Are My Sunshine", artist: "LeBron Fan", image: "you_are_my_sunshine.png", audio: "You Are My Sunshine.mp3" },
+];
+
+const AD_DATA = [
+    { title: "THE BROW KNOWS", img: "images/ui/ad_pose1.jpg", msg: "Need more hang time? Try AD's secret workout routine!", dismiss: "Trade AD to Dallas" },
+    { title: "AD APPROVED", img: "images/ui/ad_pose2.jpg", msg: "Anthony Davis says: 'These parodies hit harder than my blocks!'", dismiss: "Send AD to the Bench" },
+    { title: "BROW DOWN", img: "images/ui/anthony_davis_default.jpg", msg: "The Brow demands you listen to at least 3 more songs!", dismiss: "AD Fouled Out - Skip" },
+    { title: "AD BREAK", img: "images/ui/ad_pose1.jpg", msg: "This AD break is brought to you by Anthony Davis's eyebrow groomer.", dismiss: "Put AD on Injured Reserve" },
+];
+
+// -------------------------------------------
+// State
+// -------------------------------------------
+const audio = new Audio();
+let state = {
+    queue: [],
+    queueIndex: -1,
+    originalOrder: [],
+    shuffle: false,
+    repeat: 'off', // off, all, one
+    playing: false,
+    currentView: 'home',
+    previousView: 'home',
+    songData: {}, // {id: {playCount, isFavorite, lastPlayed}}
+    playlists: [], // [{id, name, songIds}]
+    songsPlayed: 0,
+};
+
+// -------------------------------------------
+// Persistence
+// -------------------------------------------
+function loadState() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('lebronify_state') || '{}');
+        if (saved.songData) state.songData = saved.songData;
+        if (saved.playlists) state.playlists = saved.playlists;
+    } catch(e) {}
+}
+
+function saveState() {
+    localStorage.setItem('lebronify_state', JSON.stringify({
+        songData: state.songData,
+        playlists: state.playlists,
+    }));
+}
+
+function getSongData(id) {
+    if (!state.songData[id]) state.songData[id] = { playCount: 0, isFavorite: false, lastPlayed: null };
+    return state.songData[id];
+}
+
+// -------------------------------------------
+// Helpers
+// -------------------------------------------
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return document.querySelectorAll(sel); }
+function imgPath(img) { return `images/albums/${img}`; }
+function audioPath(file) { return `songs/${file}`; }
+function formatTime(s) {
+    if (isNaN(s) || !isFinite(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+}
+function getSongOfDay() {
+    const day = Math.floor(Date.now() / 86400000);
+    return SONGS[day % SONGS.length];
+}
+function getTopSongs() {
+    return SONGS.filter(s => getSongData(s.id).playCount > 0)
+        .sort((a, b) => getSongData(b.id).playCount - getSongData(a.id).playCount);
+}
+function getRecentSongs() {
+    return SONGS.filter(s => getSongData(s.id).lastPlayed)
+        .sort((a, b) => getSongData(b.id).lastPlayed - getSongData(a.id).lastPlayed)
+        .slice(0, 20);
+}
+function getFavorites() { return SONGS.filter(s => getSongData(s.id).isFavorite); }
+function isTacoTuesday() { return new Date().getDay() === 2; }
+
+// -------------------------------------------
+// Audio Playback
+// -------------------------------------------
+function playSong(song, fromQueue) {
+    if (!fromQueue) {
+        state.queue = [song];
+        state.queueIndex = 0;
+    }
+    audio.src = audioPath(song.audio);
+    audio.play().catch(() => {});
+    state.playing = true;
+
+    // Track play after 10 seconds
+    const trackPlay = setTimeout(() => {
+        const d = getSongData(song.id);
+        d.playCount++;
+        d.lastPlayed = Date.now();
+        saveState();
+        state.songsPlayed++;
+        maybeShowAd();
+        renderAll();
+    }, 10000);
+    audio._trackTimeout = trackPlay;
+
+    updateUI();
+    updateMediaSession(song);
+}
+
+function playQueue(songs, startIndex) {
+    state.originalOrder = [...songs];
+    state.queue = state.shuffle ? shuffleArray(songs) : [...songs];
+    if (state.shuffle && startIndex >= 0) {
+        const song = songs[startIndex];
+        const idx = state.queue.findIndex(s => s.id === song.id);
+        if (idx > 0) { state.queue.splice(idx, 1); state.queue.unshift(song); }
+        state.queueIndex = 0;
+    } else {
+        state.queueIndex = state.shuffle ? 0 : startIndex;
+    }
+    playSong(state.queue[state.queueIndex], true);
+}
+
+function togglePlay() {
+    if (state.queue.length === 0) return;
+    if (audio.paused) { audio.play().catch(() => {}); state.playing = true; }
+    else { audio.pause(); state.playing = false; }
+    updateUI();
+}
+
+function nextSong() {
+    if (state.queue.length === 0) return;
+    if (state.repeat === 'one') { audio.currentTime = 0; audio.play(); return; }
+    state.queueIndex++;
+    if (state.queueIndex >= state.queue.length) {
+        if (state.repeat === 'all') state.queueIndex = 0;
+        else { state.playing = false; updateUI(); return; }
+    }
+    playSong(state.queue[state.queueIndex], true);
+}
+
+function prevSong() {
+    if (state.queue.length === 0) return;
+    if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+    state.queueIndex--;
+    if (state.queueIndex < 0) state.queueIndex = state.repeat === 'all' ? state.queue.length - 1 : 0;
+    playSong(state.queue[state.queueIndex], true);
+}
+
+function toggleShuffle() {
+    state.shuffle = !state.shuffle;
+    if (state.queue.length > 0) {
+        const current = state.queue[state.queueIndex];
+        if (state.shuffle) {
+            state.queue = shuffleArray(state.queue);
+            const idx = state.queue.findIndex(s => s.id === current.id);
+            if (idx > 0) { state.queue.splice(idx, 1); state.queue.unshift(current); }
+            state.queueIndex = 0;
+        } else {
+            state.queue = [...state.originalOrder];
+            state.queueIndex = state.queue.findIndex(s => s.id === current.id);
+            if (state.queueIndex < 0) state.queueIndex = 0;
+        }
+    }
+    updateUI();
+}
+
+function toggleRepeat() {
+    const modes = ['off', 'all', 'one'];
+    state.repeat = modes[(modes.indexOf(state.repeat) + 1) % 3];
+    updateUI();
+}
+
+function toggleFavorite(songId) {
+    const d = getSongData(songId);
+    d.isFavorite = !d.isFavorite;
+    saveState();
+    renderAll();
+}
+
+audio.addEventListener('ended', nextSong);
+audio.addEventListener('timeupdate', updateProgress);
+
+// -------------------------------------------
+// AD Breaks
+// -------------------------------------------
+function maybeShowAd() {
+    if (state.songsPlayed > 0 && state.songsPlayed % 4 === 0) {
+        const ad = AD_DATA[Math.floor(Math.random() * AD_DATA.length)];
+        $('#ad-header').textContent = ad.title;
+        $('#ad-img').src = ad.img;
+        $('#ad-msg').textContent = ad.msg;
+        $('#ad-dismiss').textContent = ad.dismiss;
+        $('#ad-overlay').style.display = 'flex';
+    }
+}
+
+// -------------------------------------------
+// Navigation
+// -------------------------------------------
+function showView(name) {
+    state.previousView = state.currentView;
+    state.currentView = name;
+    $$('.view').forEach(v => v.classList.remove('active'));
+    const view = $(`#view-${name}`);
+    if (view) view.classList.add('active');
+    // Update nav
+    $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === name));
+    $$('.mobile-tab').forEach(n => n.classList.toggle('active', n.dataset.view === name));
+    if (name === 'vault') renderVault();
+    if (name === 'search') $('#search-input').focus();
+    if (name === 'player') renderPlayerFull();
+}
+
+// -------------------------------------------
+// Rendering
+// -------------------------------------------
+function renderSongRow(song, index, options = {}) {
+    const d = getSongData(song.id);
+    const current = state.queue[state.queueIndex];
+    const isPlaying = current && current.id === song.id;
+    const topSongs = getTopSongs().slice(0, 3);
+    const mvpRank = topSongs.findIndex(s => s.id === song.id) + 1;
+    return `
+        <div class="song-row ${isPlaying ? 'playing' : ''}" data-song-id="${song.id}" data-index="${index}">
+            ${options.showNum ? `<span class="song-row-num">${index + 1}</span>` : ''}
+            <div style="position:relative">
+                <img src="${imgPath(song.image)}" alt="" class="song-row-art" loading="lazy">
+                ${mvpRank > 0 ? `<div class="song-row-mvp">${mvpRank}</div>` : ''}
+            </div>
+            <div class="song-row-info">
+                <div class="song-row-title">${song.title}</div>
+                <div class="song-row-artist">${song.artist}</div>
+            </div>
+            ${d.playCount > 0 ? `<span class="song-row-plays">${d.playCount} plays</span>` : ''}
+            <button class="song-row-fav ${d.isFavorite ? 'active' : ''}" data-fav-id="${song.id}">${d.isFavorite ? '&#x2605;' : '&#x2606;'}</button>
+        </div>
+    `;
+}
+
+function renderScrollCard(song, rank) {
+    return `
+        <div class="scroll-card" data-song-id="${song.id}">
+            <div class="scroll-card-art">
+                <img src="${imgPath(song.image)}" alt="${song.title}" loading="lazy">
+                ${rank ? `<div class="mvp-badge">${rank}</div>` : ''}
+            </div>
+            <div class="scroll-card-name">${song.title}</div>
+            <div class="scroll-card-artist">${song.artist}</div>
+        </div>
+    `;
+}
+
+function renderHome() {
+    // Song of the Day
+    const potd = getSongOfDay();
+    $('#potd-card').innerHTML = `
+        <img src="${imgPath(potd.image)}" alt="${potd.title}" class="potd-art">
+        <div class="potd-info">
+            <div class="potd-title">${potd.title}</div>
+            <div class="potd-artist">${potd.artist}</div>
+        </div>
+        <button class="potd-play" data-song-id="${potd.id}">&#x25B6;</button>
+    `;
+
+    // Recent
+    const recent = getRecentSongs();
+    const recentSection = $('#recent-section');
+    if (recent.length > 0) {
+        recentSection.style.display = '';
+        $('#recent-row').innerHTML = recent.map(s => renderScrollCard(s)).join('');
+    } else { recentSection.style.display = 'none'; }
+
+    // MVP
+    const top = getTopSongs().slice(0, 10);
+    const mvpSection = $('#mvp-section');
+    if (top.length > 0) {
+        mvpSection.style.display = '';
+        $('#mvp-row').innerHTML = top.map((s, i) => renderScrollCard(s, i < 3 ? i + 1 : 0)).join('');
+    } else { mvpSection.style.display = 'none'; }
+
+    // Full Roster
+    $('#full-roster').innerHTML = SONGS.map((s, i) => renderSongRow(s, i, { showNum: true })).join('');
+
+    // Taco Tuesday
+    if (isTacoTuesday()) $('#taco-banner').style.display = '';
+}
+
+function renderVault() {
+    // System playlists
+    const systemPl = [
+        { id: 'recent', name: 'Recently Played', art: 'images/ui/lebron_recent.png', count: getRecentSongs().length },
+        { id: 'top', name: 'MVP Selections', art: 'images/ui/lebron_top.png', count: getTopSongs().length },
+        { id: 'favorites', name: 'All-Stars', art: 'images/ui/lebron_favorites.png', count: getFavorites().length },
+    ];
+    $('#system-playlists').innerHTML = systemPl.map(p => `
+        <div class="playlist-row" data-playlist-id="${p.id}">
+            <img src="${p.art}" alt="${p.name}" class="playlist-art">
+            <div class="playlist-info">
+                <div class="playlist-name">${p.name}</div>
+                <div class="playlist-count">${p.count} songs</div>
+            </div>
+            <span class="playlist-chevron">&#x203A;</span>
+        </div>
+    `).join('');
+
+    // User playlists
+    $('#user-playlists').innerHTML = state.playlists.map(p => `
+        <div class="playlist-row" data-playlist-id="user-${p.id}">
+            <div class="playlist-art" style="background:var(--t5);display:flex;align-items:center;justify-content:center;font-size:24px;width:56px;height:56px;border-radius:6px;">&#x1F3B5;</div>
+            <div class="playlist-info">
+                <div class="playlist-name">${p.name}</div>
+                <div class="playlist-count">${p.songIds.length} songs</div>
+            </div>
+            <span class="playlist-chevron">&#x203A;</span>
+        </div>
+    `).join('');
+
+    // All-Stars
+    const favs = getFavorites();
+    if (favs.length > 0) {
+        $('#allstars-list').innerHTML = favs.map((s, i) => renderSongRow(s, i)).join('');
+        $('#empty-allstars').style.display = 'none';
+        $('#allstars-list').style.display = '';
+    } else {
+        $('#allstars-list').style.display = 'none';
+        $('#empty-allstars').style.display = '';
+    }
+
+    // Sidebar playlists
+    renderSidebarPlaylists();
+}
+
+function renderSidebarPlaylists() {
+    const el = $('#sidebar-playlists');
+    const items = [
+        { id: 'recent', name: 'Recently Played' },
+        { id: 'top', name: 'MVP Selections' },
+        { id: 'favorites', name: 'All-Stars' },
+        ...state.playlists.map(p => ({ id: `user-${p.id}`, name: p.name })),
+    ];
+    el.innerHTML = items.map(p => `<button class="sidebar-pl-item" data-playlist-id="${p.id}">${p.name}</button>`).join('');
+}
+
+function openPlaylistDetail(playlistId) {
+    let songs = [];
+    let name = '';
+    let art = '';
+
+    if (playlistId === 'recent') { songs = getRecentSongs(); name = 'Recently Played'; art = 'images/ui/lebron_recent.png'; }
+    else if (playlistId === 'top') { songs = getTopSongs(); name = 'MVP Selections'; art = 'images/ui/lebron_top.png'; }
+    else if (playlistId === 'favorites') { songs = getFavorites(); name = 'All-Stars'; art = 'images/ui/lebron_favorites.png'; }
+    else if (playlistId.startsWith('user-')) {
+        const id = parseInt(playlistId.replace('user-', ''));
+        const pl = state.playlists.find(p => p.id === id);
+        if (pl) { name = pl.name; songs = pl.songIds.map(sid => SONGS.find(s => s.id === sid)).filter(Boolean); art = ''; }
+    }
+
+    $('#playlist-header').innerHTML = `
+        ${art ? `<img src="${art}" alt="" class="playlist-header-art">` : ''}
+        <div class="playlist-header-info">
+            <div class="playlist-header-name">${name}</div>
+            <div class="playlist-header-count">${songs.length} songs</div>
+        </div>
+    `;
+    $('#playlist-songs').innerHTML = songs.map((s, i) => renderSongRow(s, i, { showNum: true })).join('');
+
+    // Store for play all/shuffle
+    $('#view-playlist-detail')._songs = songs;
+
+    showView('playlist-detail');
+}
+
+function renderPlayerFull() {
+    const song = state.queue[state.queueIndex];
+    if (!song) return;
+
+    $('#player-art').src = imgPath(song.image);
+    $('#player-title').textContent = song.title;
+    $('#player-artist').textContent = song.artist;
+
+    const d = getSongData(song.id);
+    $('#btn-favorite').classList.toggle('active', d.isFavorite);
+    $('#btn-favorite').querySelector('span').innerHTML = d.isFavorite ? '&#x2605;' : '&#x2606;';
+    $('#btn-shuffle').classList.toggle('active', state.shuffle);
+    $('#btn-repeat').classList.toggle('active', state.repeat !== 'off');
+    $('#btn-repeat').innerHTML = state.repeat === 'one' ? '&#x1F502;' : '&#x1F501;';
+    $('#btn-play').innerHTML = state.playing ? '&#x23F8;' : '&#x25B6;';
+
+    // Bench (next songs)
+    const bench = state.queue.slice(state.queueIndex + 1, state.queueIndex + 4);
+    if (bench.length > 0) {
+        $('#bench-section').style.display = '';
+        $('#bench-list').innerHTML = bench.map(s => `
+            <div class="bench-item" data-song-id="${s.id}">
+                <img src="${imgPath(s.image)}" alt="" class="bench-art">
+                <div class="bench-info">
+                    <div class="bench-name">${s.title}</div>
+                    <div class="bench-artist">${s.artist}</div>
+                </div>
+            </div>
+        `).join('');
+    } else { $('#bench-section').style.display = 'none'; }
+}
+
+function updateProgress() {
+    const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+    $('#player-progress-fill').style.width = pct + '%';
+    $('#player-progress-thumb').style.left = pct + '%';
+    $('#npb-progress-fill').style.width = pct + '%';
+    $('#player-time-current').textContent = formatTime(audio.currentTime);
+    $('#player-time-total').textContent = formatTime(audio.duration);
+}
+
+function updateUI() {
+    const song = state.queue[state.queueIndex];
+    const bar = $('#now-playing-bar');
+
+    if (song) {
+        bar.style.display = '';
+        $('#npb-art').src = imgPath(song.image);
+        $('#npb-title').textContent = song.title;
+        $('#npb-artist').textContent = song.artist;
+        const d = getSongData(song.id);
+        $('#npb-fav').classList.toggle('active', d.isFavorite);
+        $('#npb-fav').innerHTML = d.isFavorite ? '&#x2605;' : '&#x2606;';
+    }
+
+    $('#npb-play').innerHTML = state.playing ? '&#x23F8;' : '&#x25B6;';
+
+    // Update playing state on song rows
+    $$('.song-row').forEach(row => {
+        row.classList.toggle('playing', song && parseInt(row.dataset.songId) === song.id);
+    });
+
+    if (state.currentView === 'player') renderPlayerFull();
+
+    // Media session
+    if (song) updateMediaSession(song);
+}
+
+function updateMediaSession(song) {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: song.title,
+            artist: song.artist,
+            album: 'LeBronify',
+            artwork: [{ src: imgPath(song.image), sizes: '256x256', type: 'image/png' }],
+        });
+        navigator.mediaSession.setActionHandler('play', () => togglePlay());
+        navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+        navigator.mediaSession.setActionHandler('previoustrack', prevSong);
+        navigator.mediaSession.setActionHandler('nexttrack', nextSong);
+    }
+}
+
+function renderQueue() {
+    $('#queue-list').innerHTML = state.queue.map((s, i) => `
+        <div class="queue-item ${i === state.queueIndex ? 'active' : ''}" data-queue-index="${i}">
+            <img src="${imgPath(s.image)}" alt="" class="queue-art">
+            <div class="queue-info">
+                <div class="queue-name">${s.title}</div>
+                <div class="queue-artist">${s.artist}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderAll() {
+    renderHome();
+    if (state.currentView === 'vault') renderVault();
+    updateUI();
+}
+
+// -------------------------------------------
+// Event Handlers
+// -------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    loadState();
+    renderAll();
+    renderSidebarPlaylists();
+
+    // Volume
+    const vol = $('#volume-slider');
+    audio.volume = vol.value / 100;
+    vol.addEventListener('input', () => { audio.volume = vol.value / 100; });
+
+    // Navigation
+    $$('.nav-item, .mobile-tab').forEach(btn => {
+        btn.addEventListener('click', () => showView(btn.dataset.view));
+    });
+
+    // Shuffle all
+    $('#shuffle-all-btn').addEventListener('click', () => {
+        playQueue([...SONGS], Math.floor(Math.random() * SONGS.length));
+        state.shuffle = true;
+        toggleShuffle(); // This will re-shuffle with current at front
+    });
+
+    // Taco Tuesday
+    if ($('#taco-play-btn')) {
+        $('#taco-play-btn').addEventListener('click', () => {
+            const taco = SONGS.find(s => s.id === 43);
+            if (taco) playSong(taco);
+        });
+    }
+
+    // Song clicks (delegated)
+    document.addEventListener('click', (e) => {
+        // Song row click
+        const row = e.target.closest('.song-row');
+        if (row && !e.target.closest('.song-row-fav')) {
+            const songId = parseInt(row.dataset.songId);
+            const song = SONGS.find(s => s.id === songId);
+            if (song) {
+                // Determine context
+                const list = row.closest('.song-list');
+                if (list) {
+                    const rows = list.querySelectorAll('.song-row');
+                    const songs = Array.from(rows).map(r => SONGS.find(s => s.id === parseInt(r.dataset.songId))).filter(Boolean);
+                    const idx = songs.findIndex(s => s.id === songId);
+                    playQueue(songs, idx);
+                } else { playSong(song); }
+            }
+        }
+
+        // Favorite button
+        const favBtn = e.target.closest('.song-row-fav');
+        if (favBtn) {
+            e.stopPropagation();
+            toggleFavorite(parseInt(favBtn.dataset.favId));
+        }
+
+        // Scroll card click
+        const card = e.target.closest('.scroll-card');
+        if (card) {
+            const songId = parseInt(card.dataset.songId);
+            const song = SONGS.find(s => s.id === songId);
+            if (song) playSong(song);
+        }
+
+        // POTD play
+        const potdPlay = e.target.closest('.potd-play');
+        if (potdPlay) {
+            const song = SONGS.find(s => s.id === parseInt(potdPlay.dataset.songId));
+            if (song) playSong(song);
+        }
+
+        // Playlist row click
+        const plRow = e.target.closest('.playlist-row');
+        if (plRow) openPlaylistDetail(plRow.dataset.playlistId);
+
+        // Sidebar playlist click
+        const sidebarPl = e.target.closest('.sidebar-pl-item');
+        if (sidebarPl) openPlaylistDetail(sidebarPl.dataset.playlistId);
+
+        // Bench item click
+        const benchItem = e.target.closest('.bench-item');
+        if (benchItem) {
+            const songId = parseInt(benchItem.dataset.songId);
+            const idx = state.queue.findIndex(s => s.id === songId);
+            if (idx >= 0) { state.queueIndex = idx; playSong(state.queue[idx], true); }
+        }
+
+        // Queue item click
+        const queueItem = e.target.closest('.queue-item');
+        if (queueItem) {
+            state.queueIndex = parseInt(queueItem.dataset.queueIndex);
+            playSong(state.queue[state.queueIndex], true);
+            renderQueue();
+        }
+    });
+
+    // Player controls
+    $('#btn-play').addEventListener('click', togglePlay);
+    $('#btn-next').addEventListener('click', nextSong);
+    $('#btn-prev').addEventListener('click', prevSong);
+    $('#btn-shuffle').addEventListener('click', toggleShuffle);
+    $('#btn-repeat').addEventListener('click', toggleRepeat);
+    $('#btn-favorite').addEventListener('click', () => {
+        const song = state.queue[state.queueIndex];
+        if (song) toggleFavorite(song.id);
+    });
+
+    // Now Playing Bar controls
+    $('#npb-play').addEventListener('click', togglePlay);
+    $('#npb-next').addEventListener('click', nextSong);
+    $('#npb-prev').addEventListener('click', prevSong);
+    $('#npb-fav').addEventListener('click', () => {
+        const song = state.queue[state.queueIndex];
+        if (song) toggleFavorite(song.id);
+    });
+    $('#npb-open-player').addEventListener('click', () => showView('player'));
+
+    // Progress bar seeking
+    $('#player-progress-bar').addEventListener('click', (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const pct = (e.clientX - rect.left) / rect.width;
+        if (audio.duration) audio.currentTime = pct * audio.duration;
+    });
+
+    // Queue panel
+    $('#btn-queue').addEventListener('click', () => {
+        renderQueue();
+        $('#queue-panel').classList.toggle('open');
+    });
+    $('#queue-close').addEventListener('click', () => {
+        $('#queue-panel').classList.remove('open');
+    });
+
+    // Back buttons
+    $('#player-back-btn').addEventListener('click', () => showView(state.previousView || 'home'));
+    $('#playlist-back-btn').addEventListener('click', () => showView(state.previousView || 'vault'));
+
+    // Playlist play all / shuffle
+    $('#playlist-play-all').addEventListener('click', () => {
+        const songs = $('#view-playlist-detail')._songs;
+        if (songs && songs.length) playQueue(songs, 0);
+    });
+    $('#playlist-shuffle').addEventListener('click', () => {
+        const songs = $('#view-playlist-detail')._songs;
+        if (songs && songs.length) {
+            state.shuffle = true;
+            playQueue(songs, 0);
+        }
+    });
+
+    // Vault tabs
+    $$('.vault-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            $$('.vault-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            $$('.vault-panel').forEach(p => p.classList.remove('active'));
+            $(`#vault-${tab.dataset.vaultTab}`).classList.add('active');
+        });
+    });
+
+    // Search
+    $('#search-input').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        if (q.length === 0) { $('#search-results').innerHTML = ''; return; }
+        const results = SONGS.filter(s =>
+            s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
+        );
+        $('#search-results').innerHTML = results.map((s, i) => renderSongRow(s, i)).join('');
+    });
+
+    // Create playlist
+    function openCreatePlaylist() {
+        $('#modal-create').style.display = 'flex';
+        $('#playlist-name-input').value = '';
+        $('#playlist-name-input').focus();
+    }
+    $('#create-playlist-btn').addEventListener('click', openCreatePlaylist);
+    $('#vault-create-btn').addEventListener('click', openCreatePlaylist);
+    $('#modal-cancel').addEventListener('click', () => { $('#modal-create').style.display = 'none'; });
+    $('#modal-confirm').addEventListener('click', () => {
+        const name = $('#playlist-name-input').value.trim();
+        if (!name) return;
+        const id = Date.now();
+        state.playlists.push({ id, name, songIds: [] });
+        saveState();
+        $('#modal-create').style.display = 'none';
+        renderVault();
+        renderSidebarPlaylists();
+    });
+
+    // Add to playlist
+    $('#btn-add-playlist').addEventListener('click', () => {
+        const song = state.queue[state.queueIndex];
+        if (!song) return;
+        const modal = $('#modal-add-to-playlist');
+        $('#modal-playlist-list').innerHTML = state.playlists.map(p =>
+            `<div class="modal-pl-item" data-add-pl-id="${p.id}">${p.name}</div>`
+        ).join('') || '<p style="color:var(--t3);padding:12px;">No playbooks yet. Create one first!</p>';
+        modal.style.display = 'flex';
+    });
+    $('#modal-add-cancel').addEventListener('click', () => { $('#modal-add-to-playlist').style.display = 'none'; });
+    document.addEventListener('click', (e) => {
+        const item = e.target.closest('.modal-pl-item');
+        if (item) {
+            const plId = parseInt(item.dataset.addPlId);
+            const pl = state.playlists.find(p => p.id === plId);
+            const song = state.queue[state.queueIndex];
+            if (pl && song && !pl.songIds.includes(song.id)) {
+                pl.songIds.push(song.id);
+                saveState();
+            }
+            $('#modal-add-to-playlist').style.display = 'none';
+            renderVault();
+            renderSidebarPlaylists();
+        }
+    });
+
+    // AD dismiss
+    $('#ad-dismiss').addEventListener('click', () => { $('#ad-overlay').style.display = 'none'; });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+        if (e.code === 'ArrowRight') nextSong();
+        if (e.code === 'ArrowLeft') prevSong();
+    });
+});
+
+})();

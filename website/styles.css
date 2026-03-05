@@ -107,6 +107,8 @@ img { max-width: 100%; display: block; }
 .btn-secondary { background: var(--white-10); color: var(--white); border: 1px solid var(--white-10); }
 .btn-secondary:hover { background: var(--white-30); border-color: var(--white-30); }
 .btn-large { padding: 18px 36px; font-size: 18px; }
+.btn-web { border-color: var(--yellow); color: var(--yellow); }
+.btn-web:hover { background: rgba(255, 215, 0, 0.15); border-color: var(--yellow); }
 
 /* --- Section Headers --- */
 .section-header { text-align: center; margin-bottom: 60px; }
