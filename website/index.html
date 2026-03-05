@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LeBronify - The King's Parody Collection</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/png" href="images/ui/app-icon.png">
+    <link rel="icon" type="image/png" href="images/ui/lebron_default.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
     <nav class="navbar" id="navbar">
         <div class="nav-content">
             <a href="#" class="nav-logo">
-                <img src="images/ui/app-icon.png" alt="LeBronify" class="logo-icon">
+                <img src="images/ui/lebron_default.png" alt="LeBronify" class="logo-icon">
                 <span class="logo-text">LEBRONIFY</span>
             </a>
             <div class="nav-links" id="nav-links">
@@ -185,6 +185,21 @@
                     <h3>CarPlay & Widgets</h3>
                     <p>Take LeBron on the road with CarPlay support. Live Activities and home screen widgets keep the music at your fingertips.</p>
                 </div>
+                <div class="feature-card" data-animate>
+                    <div class="feature-icon">&#x1F3C6;</div>
+                    <h3>MVP Badges</h3>
+                    <p>Your most-played songs earn MVP badges - golden #1, #2, and #3 rankings that appear right on the album art. Climb the leaderboard!</p>
+                </div>
+                <div class="feature-card" data-animate>
+                    <div class="feature-icon">&#x270B;</div>
+                    <h3>Chalk Toss</h3>
+                    <p>Channel LeBron's iconic pre-game ritual. The chalk toss animation fires up before your listening session begins - just like game time.</p>
+                </div>
+                <div class="feature-card" data-animate>
+                    <div class="feature-icon">&#x1F3C5;</div>
+                    <h3>Starting 5</h3>
+                    <p>Your top 5 most-played songs become your Starting 5 lineup. Share your starting roster with friends and see who has the best taste.</p>
+                </div>
             </div>
         </div>
     </section>
@@ -199,7 +214,7 @@
             </div>
             <div class="breakdown-tabs">
                 <button class="tab-btn active" data-tab="home">
-                    <span class="tab-icon">&#x1F3E0;</span> Home Court
+                    <span class="tab-icon">&#x1F451;</span> Home Court
                 </button>
                 <button class="tab-btn" data-tab="player">
                     <span class="tab-icon">&#x1F3B6;</span> Now Playing
@@ -209,6 +224,7 @@
                 </button>
             </div>
             <div class="breakdown-content">
+                <!-- HOME COURT TAB -->
                 <div class="breakdown-panel active" id="tab-home">
                     <div class="panel-info">
                         <h3>Home Court</h3>
@@ -226,43 +242,95 @@
                         <div class="phone-mockup small">
                             <div class="phone-notch"></div>
                             <div class="phone-screen">
-                                <div class="mock-app dark">
-                                    <div class="mock-banner">
+                                <div class="mock-app-screen home-screen">
+                                    <!-- Banner -->
+                                    <div class="app-banner">
                                         <img src="images/ui/lebron_banner.jpg" alt="LeBron Banner">
+                                        <div class="app-banner-overlay">
+                                            <div class="app-banner-title">LEBRONIFY</div>
+                                            <div class="app-banner-sub">The King's Parody Collection</div>
+                                        </div>
                                     </div>
-                                    <div class="mock-shuffle-btn small">&#x1F500; Let The King Decide</div>
-                                    <div class="mock-section-title small">Recent Highlights</div>
-                                    <div class="mock-card-row">
-                                        <div class="mock-mini-card">
+                                    <!-- Shuffle button -->
+                                    <div class="app-shuffle-btn">&#x1F500; Let The King Decide</div>
+                                    <!-- Pick of the Day -->
+                                    <div class="app-section-label">LeBron's Pick of the Day</div>
+                                    <div class="app-potd-card">
+                                        <img src="images/albums/legolden_hour.png" alt="LeGolden Hour" class="app-potd-art">
+                                        <div class="app-potd-info">
+                                            <div class="app-potd-title">LeGolden Hour</div>
+                                            <div class="app-potd-artist">ilyaugust</div>
+                                        </div>
+                                        <div class="app-potd-play">&#x25B6;</div>
+                                    </div>
+                                    <!-- Recent Highlights -->
+                                    <div class="app-section-label">Recent Highlights</div>
+                                    <div class="app-scroll-row">
+                                        <div class="app-scroll-card">
                                             <img src="images/albums/brontastic.png" alt="Brontastic">
+                                            <span class="app-card-name">Brontastic</span>
                                         </div>
-                                        <div class="mock-mini-card">
-                                            <img src="images/albums/legolden_hour.png" alt="LeGolden Hour">
-                                        </div>
-                                        <div class="mock-mini-card">
+                                        <div class="app-scroll-card">
                                             <img src="images/albums/leearned_it.png" alt="LeEarned It">
+                                            <span class="app-card-name">LeEarned It</span>
+                                        </div>
+                                        <div class="app-scroll-card">
+                                            <img src="images/albums/dear_lebron.png" alt="Dear LeBron">
+                                            <span class="app-card-name">Dear LeBron</span>
                                         </div>
                                     </div>
-                                    <div class="mock-section-title small">The Full Roster</div>
-                                    <div class="mock-list-item has-art">
-                                        <img src="images/albums/bronpeii.png" alt="Bronpeii">
-                                        <div class="mock-list-text">
-                                            <span class="mock-list-name">Bronpeii</span>
-                                            <span class="mock-list-sub">ilyaugust</span>
+                                    <!-- Full Roster -->
+                                    <div class="app-section-label">The Full Roster</div>
+                                    <div class="app-song-row">
+                                        <img src="images/albums/bronpeii.png" alt="Bronpeii" class="app-row-art">
+                                        <div class="app-row-text">
+                                            <div class="app-row-name">Bronpeii</div>
+                                            <div class="app-row-artist">ilyaugust</div>
                                         </div>
                                     </div>
-                                    <div class="mock-list-item has-art">
-                                        <img src="images/albums/dear_lebron.png" alt="Dear LeBron">
-                                        <div class="mock-list-text">
-                                            <span class="mock-list-name">Dear LeBron</span>
-                                            <span class="mock-list-sub">sdotreidy</span>
+                                    <div class="app-song-row">
+                                        <img src="images/albums/marry_bron.png" alt="Marry Bron" class="app-row-art">
+                                        <div class="app-row-text">
+                                            <div class="app-row-name">Marry Bron</div>
+                                            <div class="app-row-artist">ilyaugust</div>
                                         </div>
                                     </div>
-                                    <div class="mock-list-item has-art">
-                                        <img src="images/albums/marry_bron.png" alt="Marry Bron">
-                                        <div class="mock-list-text">
-                                            <span class="mock-list-name">Marry Bron</span>
-                                            <span class="mock-list-sub">ilyaugust</span>
+                                    <div class="app-song-row">
+                                        <img src="images/albums/not_like_bron.png" alt="Not Like Bron" class="app-row-art">
+                                        <div class="app-row-text">
+                                            <div class="app-row-name">Not Like Bron</div>
+                                            <div class="app-row-artist">vonpierreofficial</div>
+                                        </div>
+                                    </div>
+                                    <!-- Mini player -->
+                                    <div class="app-mini-player">
+                                        <div class="app-mini-progress"></div>
+                                        <div class="app-mini-content">
+                                            <img src="images/albums/he_is_lebron_james.png" alt="" class="app-mini-art">
+                                            <div class="app-mini-info">
+                                                <div class="app-mini-title">He Is LeBron James</div>
+                                                <div class="app-mini-artist">My Way</div>
+                                            </div>
+                                            <div class="app-mini-controls">
+                                                <span>&#x23EE;</span>
+                                                <span class="app-mini-play">&#x25B6;</span>
+                                                <span>&#x23ED;</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Tab bar -->
+                                    <div class="app-tab-bar">
+                                        <div class="app-tab active">
+                                            <span class="app-tab-icon">&#x1F451;</span>
+                                            <span class="app-tab-label">Home</span>
+                                        </div>
+                                        <div class="app-tab">
+                                            <span class="app-tab-icon">&#x1F3B5;</span>
+                                            <span class="app-tab-label">Now Playing</span>
+                                        </div>
+                                        <div class="app-tab">
+                                            <span class="app-tab-icon">&#x1F4DA;</span>
+                                            <span class="app-tab-label">The Vault</span>
                                         </div>
                                     </div>
                                 </div>
@@ -270,6 +338,8 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- NOW PLAYING TAB -->
                 <div class="breakdown-panel" id="tab-player">
                     <div class="panel-info">
                         <h3>Now Playing</h3>
@@ -287,33 +357,77 @@
                         <div class="phone-mockup small">
                             <div class="phone-notch"></div>
                             <div class="phone-screen">
-                                <div class="mock-app dark player">
-                                    <div class="mock-album-large">
-                                        <img src="images/albums/dunk_with_a_smile.png" alt="Dunk With a Smile">
+                                <div class="mock-app-screen player-screen">
+                                    <!-- Album art -->
+                                    <div class="app-player-art-wrap">
+                                        <img src="images/albums/dunk_with_a_smile.png" alt="Dunk With a Smile" class="app-player-art">
                                     </div>
-                                    <div class="mock-song-name">Dunk With a Smile</div>
-                                    <div class="mock-song-artist-name">LeBron Fan</div>
-                                    <div class="mock-progress">
-                                        <div class="mock-progress-fill"></div>
+                                    <!-- Song info -->
+                                    <div class="app-player-title">Dunk With a Smile</div>
+                                    <div class="app-player-artist">LeBron Fan</div>
+                                    <!-- Progress bar -->
+                                    <div class="app-player-progress-wrap">
+                                        <div class="app-player-progress">
+                                            <div class="app-player-progress-fill"></div>
+                                            <div class="app-player-thumb"></div>
+                                        </div>
+                                        <div class="app-player-times">
+                                            <span>1:23</span>
+                                            <span>3:45</span>
+                                        </div>
                                     </div>
-                                    <div class="mock-controls">
-                                        <span>&#x1F500;</span>
-                                        <span>&#x23EE;</span>
-                                        <span class="mock-play-circle">&#x25B6;</span>
-                                        <span>&#x23ED;</span>
-                                        <span>&#x1F501;</span>
+                                    <!-- Controls -->
+                                    <div class="app-player-controls">
+                                        <span class="app-ctrl-dim">&#x1F500;</span>
+                                        <span class="app-ctrl">&#x23EE;</span>
+                                        <span class="app-ctrl-play">&#x25B6;</span>
+                                        <span class="app-ctrl">&#x23ED;</span>
+                                        <span class="app-ctrl-dim">&#x1F501;</span>
                                     </div>
-                                    <div class="mock-action-row">
-                                        <span>&#x2B50;</span>
-                                        <span>&#x1F4CB;</span>
-                                        <span>&#x2795;</span>
-                                        <span>&#x2728;</span>
+                                    <!-- Action row -->
+                                    <div class="app-player-actions">
+                                        <div class="app-action">
+                                            <span>&#x2B50;</span>
+                                            <span class="app-action-label">All-Star</span>
+                                        </div>
+                                        <div class="app-action">
+                                            <span>&#x1F4CB;</span>
+                                            <span class="app-action-label">Queue</span>
+                                        </div>
+                                        <div class="app-action">
+                                            <span>&#x2795;</span>
+                                            <span class="app-action-label">Playbook</span>
+                                        </div>
+                                        <div class="app-action">
+                                            <span>&#x2728;</span>
+                                            <span class="app-action-label">Mix</span>
+                                        </div>
+                                    </div>
+                                    <!-- On The Bench -->
+                                    <div class="app-bench">
+                                        <div class="app-bench-header">On The Bench</div>
+                                        <div class="app-bench-song">
+                                            <img src="images/albums/brontastic.png" alt="" class="app-bench-art">
+                                            <div class="app-bench-info">
+                                                <div class="app-bench-name">Brontastic</div>
+                                                <div class="app-bench-artist">ilyaugust</div>
+                                            </div>
+                                        </div>
+                                        <div class="app-bench-song">
+                                            <img src="images/albums/legolden_hour.png" alt="" class="app-bench-art">
+                                            <div class="app-bench-info">
+                                                <div class="app-bench-name">LeGolden Hour</div>
+                                                <div class="app-bench-artist">ilyaugust</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- THE VAULT TAB -->
                 <div class="breakdown-panel" id="tab-vault">
                     <div class="panel-info">
                         <h3>The Vault</h3>
@@ -331,37 +445,63 @@
                         <div class="phone-mockup small">
                             <div class="phone-notch"></div>
                             <div class="phone-screen">
-                                <div class="mock-app dark vault">
-                                    <div class="mock-vault-header">The Vault</div>
-                                    <div class="mock-tabs">
-                                        <span class="mock-tab active">Playbooks</span>
-                                        <span class="mock-tab">All-Stars</span>
-                                    </div>
-                                    <div class="mock-playlist-row">
-                                        <div class="mock-pl-art">
-                                            <img src="images/ui/lebron_recent.png" alt="Recently Played">
+                                <div class="mock-app-screen vault-screen">
+                                    <div class="app-vault-title">The Vault</div>
+                                    <!-- Tabs -->
+                                    <div class="app-vault-tabs">
+                                        <div class="app-vault-tab active">
+                                            <span>Playbooks</span>
+                                            <div class="app-vault-tab-line"></div>
                                         </div>
-                                        <div class="mock-pl-info">
-                                            <div class="mock-pl-name">Recently Played</div>
-                                            <div class="mock-pl-count">12 songs</div>
+                                        <div class="app-vault-tab">
+                                            <span>All-Stars</span>
                                         </div>
                                     </div>
-                                    <div class="mock-playlist-row">
-                                        <div class="mock-pl-art">
-                                            <img src="images/ui/lebron_top.png" alt="Top Hits">
+                                    <!-- System playlists label -->
+                                    <div class="app-vault-section-label">System Playlists</div>
+                                    <!-- Playlist rows -->
+                                    <div class="app-vault-row">
+                                        <img src="images/ui/lebron_recent.png" alt="" class="app-vault-art">
+                                        <div class="app-vault-info">
+                                            <div class="app-vault-name">Recently Played</div>
+                                            <div class="app-vault-desc">Your recent hits</div>
+                                            <div class="app-vault-count">12 songs</div>
                                         </div>
-                                        <div class="mock-pl-info">
-                                            <div class="mock-pl-name">MVP Selections</div>
-                                            <div class="mock-pl-count">8 songs</div>
-                                        </div>
+                                        <span class="app-vault-chevron">&#x203A;</span>
                                     </div>
-                                    <div class="mock-playlist-row">
-                                        <div class="mock-pl-art">
-                                            <img src="images/ui/lebron_favorites.png" alt="Favorites">
+                                    <div class="app-vault-row">
+                                        <img src="images/ui/lebron_top.png" alt="" class="app-vault-art">
+                                        <div class="app-vault-info">
+                                            <div class="app-vault-name">MVP Selections</div>
+                                            <div class="app-vault-desc">Most played tracks</div>
+                                            <div class="app-vault-count">8 songs</div>
                                         </div>
-                                        <div class="mock-pl-info">
-                                            <div class="mock-pl-name">All-Stars</div>
-                                            <div class="mock-pl-count">15 songs</div>
+                                        <span class="app-vault-chevron">&#x203A;</span>
+                                    </div>
+                                    <div class="app-vault-row">
+                                        <img src="images/ui/lebron_favorites.png" alt="" class="app-vault-art">
+                                        <div class="app-vault-info">
+                                            <div class="app-vault-name">All-Stars</div>
+                                            <div class="app-vault-desc">Your favorites</div>
+                                            <div class="app-vault-count">15 songs</div>
+                                        </div>
+                                        <span class="app-vault-chevron">&#x203A;</span>
+                                    </div>
+                                    <!-- Draft button -->
+                                    <div class="app-vault-draft-btn">+ Draft a Playbook</div>
+                                    <!-- Tab bar -->
+                                    <div class="app-tab-bar">
+                                        <div class="app-tab">
+                                            <span class="app-tab-icon">&#x1F451;</span>
+                                            <span class="app-tab-label">Home</span>
+                                        </div>
+                                        <div class="app-tab">
+                                            <span class="app-tab-icon">&#x1F3B5;</span>
+                                            <span class="app-tab-label">Now Playing</span>
+                                        </div>
+                                        <div class="app-tab active">
+                                            <span class="app-tab-icon">&#x1F4DA;</span>
+                                            <span class="app-tab-label">The Vault</span>
                                         </div>
                                     </div>
                                 </div>
@@ -379,12 +519,11 @@
             <div class="section-header">
                 <span class="section-tag">THE FULL ROSTER</span>
                 <h2>49+ LeBron Parodies</h2>
-                <p>Every track is a LeBron-themed parody of a hit song. Here's a taste of the lineup.</p>
+                <p>Every track is a LeBron-themed parody of a hit song. Here's the complete lineup.</p>
             </div>
             <div class="song-grid" id="song-grid">
-                <!-- Songs populated by JS -->
+                <!-- Songs populated by JS - ALL songs shown -->
             </div>
-            <p class="songs-footer">...and many more bangers in the app!</p>
         </div>
     </section>
 
@@ -454,6 +593,90 @@
                     </div>
                 </div>
 
+                <!-- Chalk Toss -->
+                <div class="fun-card chalk-card" data-animate>
+                    <div class="fun-card-visual">
+                        <div class="chalk-toss-demo">
+                            <div class="chalk-lebron">
+                                <img src="images/ui/lebron_default.png" alt="LeBron Chalk Toss" class="chalk-lebron-img">
+                            </div>
+                            <div class="chalk-particles" id="chalk-particles">
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                                <span class="chalk-dot"></span>
+                            </div>
+                            <div class="chalk-text">GAME TIME</div>
+                        </div>
+                    </div>
+                    <div class="fun-card-info">
+                        <h3>The Chalk Toss</h3>
+                        <p>Channel LeBron's most iconic pre-game ritual. Before every listening session, the chalk toss animation fires up - because every playlist deserves a proper entrance:</p>
+                        <ul class="fun-list">
+                            <li>Animated chalk powder explosion on launch</li>
+                            <li>Referenced in the splash screen loading phrases</li>
+                            <li>LeBron's signature "Preparing the chalk toss..." message</li>
+                            <li>Sets the tone: it's game time for your ears</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Starting 5 -->
+                <div class="fun-card starting5-card" data-animate>
+                    <div class="fun-card-info">
+                        <h3>Your Starting 5</h3>
+                        <p>Just like a basketball lineup, your top 5 most-played songs form your Starting 5. Share your lineup card with friends and compare rosters:</p>
+                        <ul class="fun-list">
+                            <li>Top 5 songs ranked by play count</li>
+                            <li>Beautiful lineup card with album art</li>
+                            <li>Share to social media or messages</li>
+                            <li>Updates dynamically as you listen more</li>
+                            <li>Who has the best Starting 5?</li>
+                        </ul>
+                    </div>
+                    <div class="fun-card-visual">
+                        <div class="starting5-demo">
+                            <div class="s5-header">YOUR STARTING 5</div>
+                            <div class="s5-lineup">
+                                <div class="s5-slot">
+                                    <div class="s5-rank">PG</div>
+                                    <img src="images/albums/dunk_with_a_smile.png" alt="" class="s5-art">
+                                    <div class="s5-name">Dunk With a Smile</div>
+                                </div>
+                                <div class="s5-slot">
+                                    <div class="s5-rank">SG</div>
+                                    <img src="images/albums/he_is_lebron_james.png" alt="" class="s5-art">
+                                    <div class="s5-name">He Is LeBron James</div>
+                                </div>
+                                <div class="s5-slot">
+                                    <div class="s5-rank">SF</div>
+                                    <img src="images/albums/brontastic.png" alt="" class="s5-art">
+                                    <div class="s5-name">Brontastic</div>
+                                </div>
+                                <div class="s5-slot">
+                                    <div class="s5-rank">PF</div>
+                                    <img src="images/albums/legolden_hour.png" alt="" class="s5-art">
+                                    <div class="s5-name">LeGolden Hour</div>
+                                </div>
+                                <div class="s5-slot">
+                                    <div class="s5-rank">C</div>
+                                    <img src="images/albums/leearned_it.png" alt="" class="s5-art">
+                                    <div class="s5-name">LeEarned It</div>
+                                </div>
+                            </div>
+                            <div class="s5-share">&#x1F4E4; Share Lineup</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Splash Screen -->
                 <div class="fun-card splash-card" data-animate>
                     <div class="fun-card-visual">
@@ -476,6 +699,55 @@
                             <li>"Activating playoff mode..."</li>
                             <li>"LeLoading..."</li>
                         </ul>
+                    </div>
+                </div>
+
+                <!-- MVP Badges -->
+                <div class="fun-card badges-card" data-animate>
+                    <div class="fun-card-info">
+                        <h3>MVP Badges</h3>
+                        <p>Your most-played songs earn their spot on the podium. Golden MVP badges appear directly on album art throughout the app:</p>
+                        <ul class="fun-list">
+                            <li>Gold #1 badge - Your most-played song of all time</li>
+                            <li>Gold #2 badge - Your runner-up track</li>
+                            <li>Gold #3 badge - Bronze position on the podium</li>
+                            <li>Badges update in real-time as play counts change</li>
+                            <li>Visible on Home, Queue, and Playlist screens</li>
+                        </ul>
+                    </div>
+                    <div class="fun-card-visual">
+                        <div class="badges-demo">
+                            <div class="badge-song">
+                                <div class="badge-art-wrap">
+                                    <img src="images/albums/he_is_lebron_james.png" alt="" class="badge-art">
+                                    <div class="mvp-badge gold">1</div>
+                                </div>
+                                <div class="badge-info">
+                                    <div class="badge-name">He Is LeBron James</div>
+                                    <div class="badge-plays">47 plays</div>
+                                </div>
+                            </div>
+                            <div class="badge-song">
+                                <div class="badge-art-wrap">
+                                    <img src="images/albums/dunk_with_a_smile.png" alt="" class="badge-art">
+                                    <div class="mvp-badge gold">2</div>
+                                </div>
+                                <div class="badge-info">
+                                    <div class="badge-name">Dunk With a Smile</div>
+                                    <div class="badge-plays">35 plays</div>
+                                </div>
+                            </div>
+                            <div class="badge-song">
+                                <div class="badge-art-wrap">
+                                    <img src="images/albums/brontastic.png" alt="" class="badge-art">
+                                    <div class="mvp-badge gold">3</div>
+                                </div>
+                                <div class="badge-info">
+                                    <div class="badge-name">Brontastic</div>
+                                    <div class="badge-plays">28 plays</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -545,7 +817,7 @@
             <div class="section-header">
                 <span class="section-tag">ALWAYS PLAYING</span>
                 <h2>Mini Player</h2>
-                <p>A persistent mini player follows you everywhere with playback controls and a yellow progress bar.</p>
+                <p>A persistent mini player follows you everywhere with playback controls and a yellow progress bar. Try it out!</p>
             </div>
             <div class="mini-player-demo">
                 <div class="mini-demo-bar">
@@ -553,17 +825,17 @@
                         <div class="mini-progress-fill" id="mini-progress-fill"></div>
                     </div>
                     <div class="mini-content">
-                        <div class="mini-art">
-                            <img src="images/albums/he_is_lebron_james.png" alt="He Is LeBron James">
+                        <div class="mini-art" id="mini-art">
+                            <img src="images/albums/he_is_lebron_james.png" alt="He Is LeBron James" id="mini-art-img">
                         </div>
                         <div class="mini-info">
-                            <div class="mini-title">He Is LeBron James</div>
-                            <div class="mini-artist">My Way</div>
+                            <div class="mini-title" id="mini-song-title">He Is LeBron James</div>
+                            <div class="mini-artist" id="mini-song-artist">My Way</div>
                         </div>
                         <div class="mini-controls">
-                            <button class="mini-ctrl">&#x23EE;</button>
+                            <button class="mini-ctrl" id="mini-prev-btn">&#x23EE;</button>
                             <button class="mini-ctrl play" id="mini-play-btn">&#x25B6;</button>
-                            <button class="mini-ctrl">&#x23ED;</button>
+                            <button class="mini-ctrl" id="mini-next-btn">&#x23ED;</button>
                         </div>
                     </div>
                 </div>
@@ -585,8 +857,8 @@
                     </a>
                 </div>
                 <div class="download-visual">
-                    <div class="crown-animation">
-                        <img src="images/ui/lebron_crown.jpg" alt="LeBron Crown" class="big-crown-img">
+                    <div class="download-bobblehead">
+                        <img src="images/ui/lebron_default.png" alt="LeBron" class="download-lebron-img">
                     </div>
                 </div>
             </div>
@@ -599,7 +871,7 @@
             <div class="footer-content">
                 <div class="footer-brand">
                     <span class="footer-logo">
-                        <img src="images/ui/app-icon.png" alt="LeBronify" class="footer-logo-icon"> LEBRONIFY
+                        <img src="images/ui/lebron_default.png" alt="LeBronify" class="footer-logo-icon"> LEBRONIFY
                     </span>
                     <p>The King's Parody Collection</p>
                     <p class="footer-quote">"I'm not playing right now, but I'm always ready."</p>
