@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeBronify - Web Player</title>
+    <link rel="stylesheet" href="app.css">
+    <link rel="icon" type="image/png" href="images/ui/lebron_default.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <img src="images/ui/lebron_default.png" alt="LeBronify" class="sidebar-logo-img">
+                <span class="sidebar-logo-text">LEBRONIFY</span>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="home">
+                    <span class="nav-icon">&#x1F451;</span>
+                    <span class="nav-label">Home Court</span>
+                </button>
+                <button class="nav-item" data-view="search">
+                    <span class="nav-icon">&#x1F50D;</span>
+                    <span class="nav-label">Search</span>
+                </button>
+                <button class="nav-item" data-view="vault">
+                    <span class="nav-icon">&#x1F4DA;</span>
+                    <span class="nav-label">The Vault</span>
+                </button>
+            </nav>
+            <div class="sidebar-playlists">
+                <div class="sidebar-playlists-header">
+                    <span>&#x1F3C0; Your Playbooks</span>
+                    <button class="sidebar-create-btn" id="create-playlist-btn" title="Draft a Playbook">+</button>
+                </div>
+                <div class="sidebar-playlists-list" id="sidebar-playlists"></div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="main-content">
+            <!-- Home View -->
+            <div class="view active" id="view-home">
+                <div class="view-scroll">
+                    <!-- Banner -->
+                    <div class="home-banner">
+                        <img src="images/ui/lebron_banner.jpg" alt="LeBron" class="banner-img">
+                        <div class="banner-overlay">
+                            <h1 class="banner-title">LEBRONIFY</h1>
+                            <p class="banner-sub">The King's Parody Collection</p>
+                        </div>
+                    </div>
+
+                    <!-- Taco Tuesday Banner (hidden by default) -->
+                    <div class="taco-banner-section" id="taco-banner" style="display:none;">
+                        <div class="taco-gradient">
+                            <span class="taco-title-text">&#x1F32E; TACO TUESDAYYYYY &#x1F32E;</span>
+                            <button class="taco-play-btn" id="taco-play-btn">Play Taco Tuesday</button>
+                        </div>
+                    </div>
+
+                    <!-- Shuffle Button -->
+                    <button class="shuffle-btn" id="shuffle-all-btn">
+                        <span>&#x1F500;</span> Let The King Decide
+                    </button>
+
+                    <!-- Song of the Day -->
+                    <section class="home-section">
+                        <h2 class="section-title">LeBron's Pick of the Day</h2>
+                        <div class="potd-card" id="potd-card"></div>
+                    </section>
+
+                    <!-- Recent Highlights -->
+                    <section class="home-section" id="recent-section" style="display:none;">
+                        <h2 class="section-title">Recent Highlights</h2>
+                        <div class="scroll-row" id="recent-row"></div>
+                    </section>
+
+                    <!-- MVP Selections -->
+                    <section class="home-section" id="mvp-section" style="display:none;">
+                        <h2 class="section-title">MVP Selections</h2>
+                        <div class="scroll-row" id="mvp-row"></div>
+                    </section>
+
+                    <!-- The Full Roster -->
+                    <section class="home-section">
+                        <h2 class="section-title">The Full Roster</h2>
+                        <div class="song-list" id="full-roster"></div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Search View -->
+            <div class="view" id="view-search">
+                <div class="view-scroll">
+                    <h1 class="view-title">Search</h1>
+                    <div class="search-bar-wrap">
+                        <span class="search-icon">&#x1F50D;</span>
+                        <input type="text" class="search-input" id="search-input" placeholder="Search songs, artists...">
+                    </div>
+                    <div class="song-list" id="search-results"></div>
+                </div>
+            </div>
+
+            <!-- Vault View -->
+            <div class="view" id="view-vault">
+                <div class="view-scroll">
+                    <h1 class="view-title">The Vault</h1>
+                    <div class="vault-tabs">
+                        <button class="vault-tab active" data-vault-tab="playbooks">Playbooks</button>
+                        <button class="vault-tab" data-vault-tab="allstars">All-Stars</button>
+                    </div>
+                    <div class="vault-panel active" id="vault-playbooks">
+                        <div class="vault-section-label">System Playlists</div>
+                        <div class="playlist-list" id="system-playlists"></div>
+                        <div class="vault-section-label">Your Playbooks</div>
+                        <div class="playlist-list" id="user-playlists"></div>
+                        <button class="draft-btn" id="vault-create-btn">+ Draft a Playbook</button>
+                    </div>
+                    <div class="vault-panel" id="vault-allstars">
+                        <div class="song-list" id="allstars-list"></div>
+                        <div class="empty-state" id="empty-allstars" style="display:none;">
+                            <span class="empty-icon">&#x1F494;</span>
+                            <h3>No All-Stars Yet</h3>
+                            <p>Even the King has his favorites. Tap the star on any song to crown it an All-Star.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playlist Detail View -->
+            <div class="view" id="view-playlist-detail">
+                <div class="view-scroll">
+                    <button class="back-btn" id="playlist-back-btn">&#x2190; Back</button>
+                    <div class="playlist-header" id="playlist-header"></div>
+                    <div class="playlist-actions">
+                        <button class="play-all-btn" id="playlist-play-all">&#x25B6; Play All</button>
+                        <button class="shuffle-play-btn" id="playlist-shuffle">&#x1F500; Shuffle</button>
+                    </div>
+                    <div class="song-list" id="playlist-songs"></div>
+                </div>
+            </div>
+
+            <!-- Now Playing View (full screen) -->
+            <div class="view" id="view-player">
+                <div class="view-scroll player-view-scroll">
+                    <button class="back-btn player-back" id="player-back-btn">&#x2190; Back</button>
+                    <div class="player-content">
+                        <div class="player-art-wrap">
+                            <img src="" alt="" class="player-art" id="player-art">
+                        </div>
+                        <div class="player-song-title" id="player-title">Not Playing</div>
+                        <div class="player-song-artist" id="player-artist">Select a song to start</div>
+                        <div class="player-progress-wrap">
+                            <div class="player-progress-bar" id="player-progress-bar">
+                                <div class="player-progress-fill" id="player-progress-fill"></div>
+                                <div class="player-progress-thumb" id="player-progress-thumb"></div>
+                            </div>
+                            <div class="player-times">
+                                <span id="player-time-current">0:00</span>
+                                <span id="player-time-total">0:00</span>
+                            </div>
+                        </div>
+                        <div class="player-controls">
+                            <button class="ctrl-btn" id="btn-shuffle" title="Shuffle">&#x1F500;</button>
+                            <button class="ctrl-btn ctrl-main" id="btn-prev" title="Previous">&#x23EE;</button>
+                            <button class="ctrl-btn ctrl-play" id="btn-play" title="Play">&#x25B6;</button>
+                            <button class="ctrl-btn ctrl-main" id="btn-next" title="Next">&#x23ED;</button>
+                            <button class="ctrl-btn" id="btn-repeat" title="Repeat">&#x1F501;</button>
+                        </div>
+                        <div class="player-actions">
+                            <button class="action-btn" id="btn-favorite" title="All-Star">
+                                <span>&#x2606;</span>
+                                <span class="action-label">All-Star</span>
+                            </button>
+                            <button class="action-btn" id="btn-queue" title="Queue">
+                                <span>&#x1F4CB;</span>
+                                <span class="action-label">Queue</span>
+                            </button>
+                            <button class="action-btn" id="btn-add-playlist" title="Add to Playbook">
+                                <span>&#x2795;</span>
+                                <span class="action-label">Playbook</span>
+                            </button>
+                        </div>
+                        <!-- On The Bench -->
+                        <div class="bench-section" id="bench-section">
+                            <h3 class="bench-title">On The Bench</h3>
+                            <div class="bench-list" id="bench-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Queue Panel (slide-in) -->
+        <div class="queue-panel" id="queue-panel">
+            <div class="queue-header">
+                <h2>Queue</h2>
+                <button class="queue-close" id="queue-close">&#x2715;</button>
+            </div>
+            <div class="queue-list" id="queue-list"></div>
+        </div>
+
+        <!-- Now Playing Bar (bottom) -->
+        <div class="now-playing-bar" id="now-playing-bar" style="display:none;">
+            <div class="npb-progress">
+                <div class="npb-progress-fill" id="npb-progress-fill"></div>
+            </div>
+            <div class="npb-content">
+                <div class="npb-left" id="npb-open-player">
+                    <img src="" alt="" class="npb-art" id="npb-art">
+                    <div class="npb-info">
+                        <div class="npb-title" id="npb-title">Not Playing</div>
+                        <div class="npb-artist" id="npb-artist"></div>
+                    </div>
+                </div>
+                <div class="npb-controls">
+                    <button class="npb-btn" id="npb-prev">&#x23EE;</button>
+                    <button class="npb-btn npb-play" id="npb-play">&#x25B6;</button>
+                    <button class="npb-btn" id="npb-next">&#x23ED;</button>
+                </div>
+                <div class="npb-right">
+                    <button class="npb-btn npb-fav" id="npb-fav" title="All-Star">&#x2606;</button>
+                    <div class="npb-volume">
+                        <span>&#x1F50A;</span>
+                        <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="80">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AD Overlay -->
+        <div class="ad-overlay" id="ad-overlay" style="display:none;">
+            <div class="ad-card">
+                <div class="ad-header" id="ad-header">THE BROW KNOWS</div>
+                <img src="" alt="AD" class="ad-img" id="ad-img">
+                <div class="ad-msg" id="ad-msg"></div>
+                <button class="ad-dismiss-btn" id="ad-dismiss"></button>
+            </div>
+        </div>
+
+        <!-- Create Playlist Modal -->
+        <div class="modal-overlay" id="modal-create" style="display:none;">
+            <div class="modal-card">
+                <h2>Draft a Playbook</h2>
+                <input type="text" class="modal-input" id="playlist-name-input" placeholder="Playbook name...">
+                <div class="modal-actions">
+                    <button class="modal-cancel" id="modal-cancel">Cancel</button>
+                    <button class="modal-confirm" id="modal-confirm">Draft</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add to Playlist Modal -->
+        <div class="modal-overlay" id="modal-add-to-playlist" style="display:none;">
+            <div class="modal-card">
+                <h2>Add to Playbook</h2>
+                <div class="modal-playlist-list" id="modal-playlist-list"></div>
+                <button class="modal-cancel" id="modal-add-cancel">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Mobile Tab Bar -->
+        <div class="mobile-tabs" id="mobile-tabs">
+            <button class="mobile-tab active" data-view="home">
+                <span>&#x1F451;</span>
+                <span>Home</span>
+            </button>
+            <button class="mobile-tab" data-view="search">
+                <span>&#x1F50D;</span>
+                <span>Search</span>
+            </button>
+            <button class="mobile-tab" data-view="player">
+                <span>&#x1F3B5;</span>
+                <span>Now Playing</span>
+            </button>
+            <button class="mobile-tab" data-view="vault">
+                <span>&#x1F4DA;</span>
+                <span>The Vault</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
