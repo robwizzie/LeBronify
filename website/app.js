@@ -1,9 +1,36 @@
 /* ============================================
    LEBRONIFY WEB APP - Full Music Player Engine
+   SVG icons throughout - no emojis
    ============================================ */
 
 (function() {
 'use strict';
+
+// -------------------------------------------
+// SVG Icon Library (matching SF Symbols)
+// -------------------------------------------
+const ICONS = {
+    play: '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    pause: '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>',
+    prev: '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>',
+    next: '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>',
+    shuffle: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>',
+    repeat: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>',
+    repeatOne: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z"/></svg>',
+    starEmpty: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
+    starFilled: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
+    chevronRight: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
+    musicNote: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>',
+    ellipsis: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+};
+
+function icon(name, size) {
+    let svg = ICONS[name] || '';
+    if (size) {
+        svg = svg.replace(/width="\d+"/, `width="${size}"`).replace(/height="\d+"/, `height="${size}"`);
+    }
+    return svg;
+}
 
 // -------------------------------------------
 // Song Database
@@ -76,12 +103,12 @@ let state = {
     queueIndex: -1,
     originalOrder: [],
     shuffle: false,
-    repeat: 'off', // off, all, one
+    repeat: 'off',
     playing: false,
     currentView: 'home',
     previousView: 'home',
-    songData: {}, // {id: {playCount, isFavorite, lastPlayed}}
-    playlists: [], // [{id, name, songIds}]
+    songData: {},
+    playlists: [],
     songsPlayed: 0,
 };
 
@@ -154,7 +181,7 @@ function playSong(song, fromQueue) {
     audio.play().catch(() => {});
     state.playing = true;
 
-    // Track play after 10 seconds
+    if (audio._trackTimeout) clearTimeout(audio._trackTimeout);
     const trackPlay = setTimeout(() => {
         const d = getSongData(song.id);
         d.playCount++;
@@ -267,7 +294,6 @@ function showView(name) {
     $$('.view').forEach(v => v.classList.remove('active'));
     const view = $(`#view-${name}`);
     if (view) view.classList.add('active');
-    // Update nav
     $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === name));
     $$('.mobile-tab').forEach(n => n.classList.toggle('active', n.dataset.view === name));
     if (name === 'vault') renderVault();
@@ -296,7 +322,7 @@ function renderSongRow(song, index, options = {}) {
                 <div class="song-row-artist">${song.artist}</div>
             </div>
             ${d.playCount > 0 ? `<span class="song-row-plays">${d.playCount} plays</span>` : ''}
-            <button class="song-row-fav ${d.isFavorite ? 'active' : ''}" data-fav-id="${song.id}">${d.isFavorite ? '&#x2605;' : '&#x2606;'}</button>
+            <button class="song-row-fav ${d.isFavorite ? 'active' : ''}" data-fav-id="${song.id}">${d.isFavorite ? icon('starFilled', 16) : icon('starEmpty', 16)}</button>
         </div>
     `;
 }
@@ -323,7 +349,7 @@ function renderHome() {
             <div class="potd-title">${potd.title}</div>
             <div class="potd-artist">${potd.artist}</div>
         </div>
-        <button class="potd-play" data-song-id="${potd.id}">&#x25B6;</button>
+        <button class="potd-play" data-song-id="${potd.id}">${icon('play', 18)}</button>
     `;
 
     // Recent
@@ -350,7 +376,6 @@ function renderHome() {
 }
 
 function renderVault() {
-    // System playlists
     const systemPl = [
         { id: 'recent', name: 'Recently Played', art: 'images/ui/lebron_recent.png', count: getRecentSongs().length },
         { id: 'top', name: 'MVP Selections', art: 'images/ui/lebron_top.png', count: getTopSongs().length },
@@ -363,23 +388,21 @@ function renderVault() {
                 <div class="playlist-name">${p.name}</div>
                 <div class="playlist-count">${p.count} songs</div>
             </div>
-            <span class="playlist-chevron">&#x203A;</span>
+            <span class="playlist-chevron">${icon('chevronRight')}</span>
         </div>
     `).join('');
 
-    // User playlists
     $('#user-playlists').innerHTML = state.playlists.map(p => `
         <div class="playlist-row" data-playlist-id="user-${p.id}">
-            <div class="playlist-art" style="background:var(--t5);display:flex;align-items:center;justify-content:center;font-size:24px;width:56px;height:56px;border-radius:6px;">&#x1F3B5;</div>
+            <div class="playlist-art playlist-art-placeholder">${icon('musicNote')}</div>
             <div class="playlist-info">
                 <div class="playlist-name">${p.name}</div>
                 <div class="playlist-count">${p.songIds.length} songs</div>
             </div>
-            <span class="playlist-chevron">&#x203A;</span>
+            <span class="playlist-chevron">${icon('chevronRight')}</span>
         </div>
     `).join('');
 
-    // All-Stars
     const favs = getFavorites();
     if (favs.length > 0) {
         $('#allstars-list').innerHTML = favs.map((s, i) => renderSongRow(s, i)).join('');
@@ -390,7 +413,6 @@ function renderVault() {
         $('#empty-allstars').style.display = '';
     }
 
-    // Sidebar playlists
     renderSidebarPlaylists();
 }
 
@@ -427,10 +449,7 @@ function openPlaylistDetail(playlistId) {
         </div>
     `;
     $('#playlist-songs').innerHTML = songs.map((s, i) => renderSongRow(s, i, { showNum: true })).join('');
-
-    // Store for play all/shuffle
     $('#view-playlist-detail')._songs = songs;
-
     showView('playlist-detail');
 }
 
@@ -443,14 +462,21 @@ function renderPlayerFull() {
     $('#player-artist').textContent = song.artist;
 
     const d = getSongData(song.id);
-    $('#btn-favorite').classList.toggle('active', d.isFavorite);
-    $('#btn-favorite').querySelector('span').innerHTML = d.isFavorite ? '&#x2605;' : '&#x2606;';
-    $('#btn-shuffle').classList.toggle('active', state.shuffle);
-    $('#btn-repeat').classList.toggle('active', state.repeat !== 'off');
-    $('#btn-repeat').innerHTML = state.repeat === 'one' ? '&#x1F502;' : '&#x1F501;';
-    $('#btn-play').innerHTML = state.playing ? '&#x23F8;' : '&#x25B6;';
+    const favBtn = $('#btn-favorite');
+    favBtn.classList.toggle('active', d.isFavorite);
+    favBtn.querySelector('.action-icon').innerHTML = d.isFavorite ? icon('starFilled', 20) : icon('starEmpty', 20);
 
-    // Bench (next songs)
+    $('#btn-shuffle').classList.toggle('active', state.shuffle);
+    $('#btn-shuffle').innerHTML = icon('shuffle');
+
+    $('#btn-repeat').classList.toggle('active', state.repeat !== 'off');
+    $('#btn-repeat').innerHTML = state.repeat === 'one' ? icon('repeatOne') : icon('repeat');
+
+    $('#btn-play').innerHTML = state.playing ? icon('pause', 22) : icon('play', 22);
+    $('#btn-prev').innerHTML = icon('prev', 24);
+    $('#btn-next').innerHTML = icon('next', 24);
+
+    // Bench
     const bench = state.queue.slice(state.queueIndex + 1, state.queueIndex + 4);
     if (bench.length > 0) {
         $('#bench-section').style.display = '';
@@ -485,11 +511,15 @@ function updateUI() {
         $('#npb-title').textContent = song.title;
         $('#npb-artist').textContent = song.artist;
         const d = getSongData(song.id);
-        $('#npb-fav').classList.toggle('active', d.isFavorite);
-        $('#npb-fav').innerHTML = d.isFavorite ? '&#x2605;' : '&#x2606;';
+        const favEl = $('#npb-fav');
+        favEl.classList.toggle('active', d.isFavorite);
+        favEl.innerHTML = d.isFavorite ? icon('starFilled', 16) : icon('starEmpty', 16);
     }
 
-    $('#npb-play').innerHTML = state.playing ? '&#x23F8;' : '&#x25B6;';
+    // Now playing bar controls
+    $('#npb-play').innerHTML = state.playing ? icon('pause', 14) : icon('play', 14);
+    $('#npb-prev').innerHTML = icon('prev', 16);
+    $('#npb-next').innerHTML = icon('next', 16);
 
     // Update playing state on song rows
     $$('.song-row').forEach(row => {
@@ -497,8 +527,6 @@ function updateUI() {
     });
 
     if (state.currentView === 'player') renderPlayerFull();
-
-    // Media session
     if (song) updateMediaSession(song);
 }
 
@@ -543,6 +571,14 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
     renderSidebarPlaylists();
 
+    // Set initial icons for player controls
+    $('#btn-shuffle').innerHTML = icon('shuffle');
+    $('#btn-prev').innerHTML = icon('prev', 24);
+    $('#btn-play').innerHTML = icon('play', 22);
+    $('#btn-next').innerHTML = icon('next', 24);
+    $('#btn-repeat').innerHTML = icon('repeat');
+    $('#btn-favorite .action-icon').innerHTML = icon('starEmpty', 20);
+
     // Volume
     const vol = $('#volume-slider');
     audio.volume = vol.value / 100;
@@ -557,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#shuffle-all-btn').addEventListener('click', () => {
         playQueue([...SONGS], Math.floor(Math.random() * SONGS.length));
         state.shuffle = true;
-        toggleShuffle(); // This will re-shuffle with current at front
+        toggleShuffle();
     });
 
     // Taco Tuesday
@@ -570,13 +606,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Song clicks (delegated)
     document.addEventListener('click', (e) => {
-        // Song row click
         const row = e.target.closest('.song-row');
         if (row && !e.target.closest('.song-row-fav')) {
             const songId = parseInt(row.dataset.songId);
             const song = SONGS.find(s => s.id === songId);
             if (song) {
-                // Determine context
                 const list = row.closest('.song-list');
                 if (list) {
                     const rows = list.querySelectorAll('.song-row');
@@ -587,14 +621,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Favorite button
         const favBtn = e.target.closest('.song-row-fav');
         if (favBtn) {
             e.stopPropagation();
             toggleFavorite(parseInt(favBtn.dataset.favId));
         }
 
-        // Scroll card click
         const card = e.target.closest('.scroll-card');
         if (card) {
             const songId = parseInt(card.dataset.songId);
@@ -602,22 +634,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (song) playSong(song);
         }
 
-        // POTD play
         const potdPlay = e.target.closest('.potd-play');
         if (potdPlay) {
             const song = SONGS.find(s => s.id === parseInt(potdPlay.dataset.songId));
             if (song) playSong(song);
         }
 
-        // Playlist row click
         const plRow = e.target.closest('.playlist-row');
         if (plRow) openPlaylistDetail(plRow.dataset.playlistId);
 
-        // Sidebar playlist click
         const sidebarPl = e.target.closest('.sidebar-pl-item');
         if (sidebarPl) openPlaylistDetail(sidebarPl.dataset.playlistId);
 
-        // Bench item click
         const benchItem = e.target.closest('.bench-item');
         if (benchItem) {
             const songId = parseInt(benchItem.dataset.songId);
@@ -625,7 +653,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (idx >= 0) { state.queueIndex = idx; playSong(state.queue[idx], true); }
         }
 
-        // Queue item click
         const queueItem = e.target.closest('.queue-item');
         if (queueItem) {
             state.queueIndex = parseInt(queueItem.dataset.queueIndex);
