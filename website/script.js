@@ -247,9 +247,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (miniProgressFill) miniProgressFill.style.width = '0%';
     }
 
+    const SVG_PLAY = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+    const SVG_PAUSE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+
     function startPlaying() {
         miniPlaying = true;
-        if (miniPlayBtn) miniPlayBtn.innerHTML = '&#x23F8;';
+        if (miniPlayBtn) miniPlayBtn.innerHTML = SVG_PAUSE;
         if (miniInterval) clearInterval(miniInterval);
         miniInterval = setInterval(() => {
             miniProgress += 0.3;
@@ -265,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function stopPlaying() {
         miniPlaying = false;
-        if (miniPlayBtn) miniPlayBtn.innerHTML = '&#x25B6;';
+        if (miniPlayBtn) miniPlayBtn.innerHTML = SVG_PLAY;
         if (miniInterval) clearInterval(miniInterval);
     }
 
@@ -335,10 +338,19 @@ document.addEventListener('DOMContentLoaded', () => {
         function drawCrown(x, y, size, alpha) {
             ctx.save();
             ctx.globalAlpha = alpha;
-            ctx.font = `${size}px serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('\u{1F451}', x, y);
+            ctx.translate(x - size/2, y - size/2);
+            const s = size / 20;
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(2*s, 16*s);
+            ctx.lineTo(4*s, 8*s);
+            ctx.lineTo(7*s, 12*s);
+            ctx.lineTo(10*s, 4*s);
+            ctx.lineTo(13*s, 12*s);
+            ctx.lineTo(16*s, 8*s);
+            ctx.lineTo(18*s, 16*s);
+            ctx.closePath();
+            ctx.fill();
             ctx.restore();
         }
 
