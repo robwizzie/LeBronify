@@ -170,9 +170,9 @@ svg { flex-shrink: 0; }
 }
 
 /* Song List */
-.song-list { display: flex; flex-direction: column; }
+.song-list { display: flex; flex-direction: column; gap: 4px; }
 .song-row {
-    display: flex; align-items: center; gap: 12px; padding: 8px 8px;
+    display: flex; align-items: center; gap: 12px; padding: 10px 8px;
     border-radius: var(--radius); transition: var(--transition); cursor: pointer;
 }
 .song-row:hover { background: var(--bg-hover); }
