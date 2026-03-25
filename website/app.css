@@ -197,6 +197,21 @@ svg { flex-shrink: 0; }
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
+.song-row-menu { color: var(--t4); padding: 4px; display: flex; align-items: center; flex-shrink: 0; transition: var(--transition); }
+.song-row-menu:hover { color: var(--t2); }
+
+/* Context Menu */
+.context-menu {
+    position: fixed; background: var(--bg-elevated); border: 1px solid var(--t5);
+    border-radius: 10px; padding: 6px 0; min-width: 180px; z-index: 400;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.context-menu-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    font-size: 13px; color: var(--t2); cursor: pointer; transition: var(--transition);
+}
+.context-menu-item:hover { background: var(--t5); color: var(--t1); }
+.context-menu-item svg { flex-shrink: 0; }
 
 /* --- Search --- */
 .search-bar-wrap {
@@ -334,30 +349,98 @@ svg { flex-shrink: 0; }
 .bench-name { font-size: 13px; font-weight: 500; }
 .bench-artist { font-size: 11px; color: var(--t4); }
 
+/* --- Player Empty State --- */
+.player-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 60px 20px; text-align: center; width: 100%; max-width: 400px; margin: 0 auto;
+}
+.player-empty-img { width: 180px; height: 180px; border-radius: 90px; object-fit: cover; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.player-empty-title { font-size: 28px; font-weight: 900; color: var(--yellow); letter-spacing: 2px; margin-bottom: 12px; }
+.player-empty-quote { font-size: 13px; font-style: italic; color: rgba(255,215,0,0.5); margin-bottom: 28px; font-family: Georgia, 'Times New Roman', serif; }
+.player-empty-btn {
+    background: var(--yellow); color: #000; padding: 14px 32px;
+    border-radius: 25px; font-size: 15px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px; transition: var(--transition);
+}
+.player-empty-btn:hover { transform: scale(1.03); box-shadow: 0 4px 20px var(--yellow-glow); }
+
 /* --- Queue Panel --- */
 .queue-panel {
     position: fixed; top: 0; right: -360px; width: 360px; height: calc(100vh - var(--npb-h));
-    background: var(--bg-elevated); z-index: 100; transition: right 0.3s ease;
+    background: rgb(18,18,18); z-index: 100; transition: right 0.3s ease;
     display: flex; flex-direction: column; border-left: 1px solid var(--t6);
     box-shadow: -4px 0 20px rgba(0,0,0,0.4);
 }
 .queue-panel.open { right: 0; }
-.queue-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid var(--t6); }
+.queue-drag-handle {
+    width: 36px; height: 5px; background: var(--t4); border-radius: 3px;
+    margin: 10px auto 0; flex-shrink: 0;
+}
+.queue-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; }
 .queue-header h2 { font-size: 18px; font-weight: 700; }
 .queue-close { color: var(--t3); padding: 4px; display: flex; align-items: center; transition: var(--transition); }
 .queue-close:hover { color: var(--t1); }
-.queue-list { flex: 1; overflow-y: auto; padding: 8px 12px 12px; }
+
+/* On The Court - current song */
+.queue-court {
+    padding: 12px 16px; background: rgb(28,28,28); border-radius: 12px;
+    margin: 0 12px 8px; flex-shrink: 0;
+}
+.queue-court-label { font-size: 10px; font-weight: 700; color: var(--yellow); letter-spacing: 1.2px; margin-bottom: 10px; }
+.queue-court-content { display: flex; align-items: center; gap: 12px; }
+.queue-court-art { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.4); flex-shrink: 0; }
+.queue-court-info { flex: 1; min-width: 0; }
+.queue-court-title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.queue-court-artist { font-size: 12px; color: var(--t3); margin-top: 2px; }
+.queue-court-controls { display: flex; align-items: center; gap: 12px; }
+.queue-court-btn { color: var(--t2); padding: 4px; display: flex; align-items: center; transition: var(--transition); }
+.queue-court-btn:hover { color: var(--t1); }
+.queue-court-play { width: 34px; height: 34px; background: var(--white); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+/* On The Bench header */
+.queue-bench-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 20px 6px; flex-shrink: 0;
+}
+.queue-bench-label { font-size: 10px; font-weight: 700; color: var(--t3); letter-spacing: 1.2px; }
+.queue-bench-count { font-size: 10px; color: var(--t4); }
+
+.queue-list { flex: 1; overflow-y: auto; padding: 4px 12px 12px; }
 .queue-item {
     display: flex; align-items: center; gap: 10px; padding: 8px;
     border-radius: var(--radius); cursor: pointer; transition: var(--transition);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
 }
+.queue-item:last-child { border-bottom: none; }
 .queue-item:hover { background: var(--bg-hover); }
-.queue-item.active { background: var(--t5); }
-.queue-art { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+.queue-item-num { width: 20px; text-align: center; font-size: 13px; color: var(--t4); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.queue-art { width: 44px; height: 44px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
 .queue-info { flex: 1; min-width: 0; }
 .queue-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.queue-item.active .queue-name { color: var(--yellow); }
 .queue-artist { font-size: 11px; color: var(--t4); }
+.queue-item-play { color: var(--t3); padding: 4px; display: flex; align-items: center; transition: var(--transition); flex-shrink: 0; }
+.queue-item-play:hover { color: var(--t1); }
+
+/* Queue Bottom Controls */
+.queue-bottom {
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0; background: rgb(18,18,18);
+}
+.queue-bottom-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    color: var(--t3); padding: 8px 12px; transition: var(--transition); font-size: 10px; font-weight: 500;
+}
+.queue-bottom-btn:hover { color: var(--t1); }
+.queue-bottom-btn.active { color: var(--yellow); }
+.queue-bottom-btn svg { opacity: 0.6; }
+.queue-bottom-btn.active svg { opacity: 1; }
+
+/* Queue empty */
+.queue-empty { text-align: center; padding: 40px 20px; }
+.queue-empty-icon { color: var(--yellow); opacity: 0.3; margin-bottom: 12px; }
+.queue-empty-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.queue-empty-text { font-size: 12px; color: var(--t3); }
 
 /* --- Now Playing Bar --- */
 .now-playing-bar {
@@ -468,7 +551,7 @@ svg { flex-shrink: 0; }
     .player-art-wrap { width: 260px; height: 260px; }
     .home-banner { height: 180px; }
     .banner-title { font-size: 28px; }
-    .queue-panel { width: 100%; right: -100%; }
+    .queue-panel { width: 100%; right: -100%; height: calc(100vh - var(--npb-h) - 56px); }
 }
 
 @media (max-width: 480px) {
