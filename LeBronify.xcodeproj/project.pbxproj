@@ -74,6 +74,7 @@
 				Assets.xcassets,
 				ContentView.swift,
 				LeBronifyApp.swift,
+				LiveActivity/LiveActivityManager.swift,
 				Models/DataManager.swift,
 				Models/Song.swift,
 				Models/SongManager.swift,
@@ -127,10 +128,12 @@
 				"Songs/Towards The Bron - ilyaugust.mp3",
 				"Songs/You Are My Sunshine.mp3",
 				SplashScreen.swift,
+				Utilities/AchievementManager.swift,
 				Utilities/AlbumArtHelper.swift,
 				Utilities/AppIconManager.swift,
 				Utilities/AudioPlaybackManager.swift,
 				Utilities/CarPlaySceneDelegate.swift,
+				Utilities/ChalkTossView.swift,
 				Utilities/QueueButton.swift,
 				Utilities/QueueManager.swift,
 				Utilities/TacoTuesdayManager.swift,
@@ -140,6 +143,7 @@
 				Views/LibraryView.swift,
 				Views/PlayerView.swift,
 				Views/QueueView.swift,
+				Views/ShareCardView.swift,
 			);
 			target = B2C5C7A62D94CCB100BAE769 /* LeBronify */;
 		};
@@ -197,15 +201,18 @@
 				"Songs/This is The Bron - fanoftatum0.mp3",
 				"Songs/Towards The Bron - ilyaugust.mp3",
 				"Songs/You Are My Sunshine.mp3",
+				Utilities/AchievementManager.swift,
 				Utilities/AlbumArtHelper.swift,
 				Utilities/AppIconManager.swift,
 				Utilities/AudioPlaybackManager.swift,
 				Utilities/CarPlaySceneDelegate.swift,
+				Utilities/ChalkTossView.swift,
 				Utilities/QueueButton.swift,
 				Utilities/QueueManager.swift,
 				Utilities/TacoTuesdayManager.swift,
 				Utilities/UIComponents.swift,
 				Views/QueueView.swift,
+				Views/ShareCardView.swift,
 			);
 			target = B2C5C7C02D94CCB600BAE769 /* LeBronifyUITests */;
 		};
@@ -536,7 +543,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 29256KAL2X;
+				DEVELOPMENT_TEAM = NS237SS5KD;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LeBronifyWidgetyExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = LeBronifyWidgetyExtension;
@@ -564,7 +571,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 29256KAL2X;
+				DEVELOPMENT_TEAM = NS237SS5KD;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LeBronifyWidgetyExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = LeBronifyWidgetyExtension;
@@ -709,12 +716,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = TacoTuesdayIcon;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 29256KAL2X;
+				DEVELOPMENT_TEAM = NS237SS5KD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LeBronify/Info.plist;
@@ -741,12 +748,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = TacoTuesdayIcon;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 29256KAL2X;
+				DEVELOPMENT_TEAM = NS237SS5KD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LeBronify/Info.plist;

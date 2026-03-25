@@ -96,7 +96,7 @@ struct PlaylistEditorView: View {
                         
                         // Image source picker
                         VStack(alignment: .leading) {
-                            Text("Playlist Image")
+                            Text("Playbook Image")
                                 .font(.headline)
                                 .padding(.leading)
                             
@@ -144,11 +144,11 @@ struct PlaylistEditorView: View {
                         
                         // Text fields for playlist details
                         VStack(alignment: .leading) {
-                            Text("Playlist Name")
+                            Text("Playbook Name")
                                 .font(.headline)
                                 .padding(.leading)
                             
-                            TextField("Enter playlist name", text: $playlistName)
+                            TextField("Enter playbook name", text: $playlistName)
                                 .padding()
                                 .background(Color.white.opacity(0.8))
                                 .cornerRadius(8)

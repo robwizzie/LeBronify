@@ -120,7 +120,15 @@ struct SongRow: View {
                     Button { showingAddToPlaylist = true } label: {
                         Label("Add to Playbook", systemImage: "plus.rectangle.on.folder")
                     }
-                    Button { viewModel.toggleFavorite(for: song.id) } label: {
+                    Button {
+                        if song.isFavorite {
+                            viewModel.performTheDecision(song: song) {
+                                viewModel.toggleFavorite(for: song.id)
+                            }
+                        } else {
+                            viewModel.toggleFavorite(for: song.id)
+                        }
+                    } label: {
                         Label(
                             song.isFavorite ? "Remove from All-Stars" : "Crown as All-Star",
                             systemImage: song.isFavorite ? "star.fill" : "star"
@@ -271,12 +279,18 @@ struct SongCardView: View {
             
             Divider()
             
-            Button(action: {
-                viewModel.toggleFavorite(for: song.id)
-            }) {
+            Button {
+                if song.isFavorite {
+                    viewModel.performTheDecision(song: song) {
+                        viewModel.toggleFavorite(for: song.id)
+                    }
+                } else {
+                    viewModel.toggleFavorite(for: song.id)
+                }
+            } label: {
                 Label(
-                    song.isFavorite ? "Remove from Favorites" : "Add to Favorites",
-                    systemImage: song.isFavorite ? "heart.fill" : "heart"
+                    song.isFavorite ? "Remove from All-Stars" : "Crown as All-Star",
+                    systemImage: song.isFavorite ? "star.fill" : "star"
                 )
             }
         }
@@ -611,6 +625,167 @@ enum SortOption {
     case `default`, title, artist, plays, recent
 }
 
+// MARK: - Technical Foul Overlay (Flop Counter)
+
+struct TechnicalFoulOverlay: View {
+    @Binding var isShowing: Bool
+    @State private var showContent = false
+    @State private var dismissText = "I wasn't flopping!"
+
+    private let messages = [
+        "Stop flopping! This isn't the playoffs!",
+        "The refs are watching... stop faking those pauses!",
+        "LeBron never flops... okay maybe sometimes.",
+        "That's a flop! Even Vlade Divac is impressed.",
+        "Pause abuse detected. The league office will review this.",
+        "You've been fined $50,000 for flopping. Just kidding.",
+    ]
+
+    private let dismissTexts = [
+        "I wasn't flopping!",
+        "Challenge the call",
+        "Accept the foul",
+        "Review the play",
+    ]
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.85)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    if showContent { isShowing = false }
+                }
+
+            VStack(spacing: 20) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.red)
+                    .shadow(color: .red.opacity(0.5), radius: 10)
+
+                Text("TECHNICAL FOUL!")
+                    .font(.system(size: 28, weight: .black))
+                    .foregroundColor(.yellow)
+
+                Text(messages.randomElement() ?? messages[0])
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+
+                Button {
+                    isShowing = false
+                } label: {
+                    Text(dismissText)
+                        .font(.system(size: 15, weight: .bold))
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(Color.yellow)
+                        .foregroundColor(.black)
+                        .cornerRadius(25)
+                }
+            }
+            .opacity(showContent ? 1 : 0)
+            .scaleEffect(showContent ? 1 : 0.5)
+        }
+        .onAppear {
+            dismissText = dismissTexts.randomElement() ?? dismissTexts[0]
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                showContent = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                isShowing = false
+            }
+        }
+    }
+}
+
+// MARK: - The Decision Overlay
+
+struct TheDecisionOverlay: View {
+    let song: Song
+    let destination: String
+    let onComplete: () -> Void
+    @State private var phase = 0
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.9)
+                .ignoresSafeArea()
+
+            VStack(spacing: 24) {
+                if phase >= 0 {
+                    // Breaking News banner
+                    Text("BREAKING NEWS")
+                        .font(.system(size: 14, weight: .heavy))
+                        .tracking(4)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(Color.red)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
+                if phase >= 1 {
+                    // Song album art
+                    Image(song.albumArt)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 100, height: 100)
+                        .cornerRadius(8)
+                        .transition(.scale.combined(with: .opacity))
+                }
+
+                if phase >= 2 {
+                    // The reveal
+                    VStack(spacing: 12) {
+                        Text("\"\(song.title)\"")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+
+                        Text("is taking its talents to...")
+                            .font(.system(size: 16))
+                            .foregroundColor(.white.opacity(0.7))
+                            .italic()
+                    }
+                    .transition(.opacity)
+                }
+
+                if phase >= 3 {
+                    // The destination
+                    Text(destination.uppercased())
+                        .font(.system(size: 26, weight: .black))
+                        .foregroundColor(.yellow)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .padding(.horizontal, 32)
+        }
+        .onAppear {
+            // Phase 0: Breaking news (immediate)
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                phase = 0
+            }
+            // Phase 1: Show album art
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { phase = 1 }
+            }
+            // Phase 2: "Taking its talents..."
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                withAnimation(.easeInOut(duration: 0.3)) { phase = 2 }
+            }
+            // Phase 3: Destination reveal
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { phase = 3 }
+            }
+            // Complete
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                onComplete()
+            }
+        }
+    }
+}
+
 // Create simple wrappers for views that aren't in scope
 struct AddToPlaylistViewWrapper: View {
     let song: Song
@@ -920,39 +1095,47 @@ struct CustomPlaylistImageView: View {
 // Helper extension to handle playlist images consistently throughout the app
 extension Playlist {
     // Returns the appropriate View for displaying this playlist's image
+    // Known asset image names used for playlist covers
+    private static let assetCoverImages: Set<String> = [
+        "lebron_recent", "lebron_top", "lebron_favorites",
+        "lebron_lakers", "lebron_crown", "lebron_love",
+        "lebron_ball", "lebron_meme", "lebron_default",
+        "ilyaugust"
+    ]
+
     @ViewBuilder
     func getImageView(size: CGFloat) -> some View {
-        if isSystem {
-            // System playlists use asset images
-            if ["lebron_recent", "lebron_top", "lebron_favorites"].contains(coverImage) {
-                Image(coverImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: size, height: size)
-                    .cornerRadius(size * 0.1)
-                    .shadow(radius: 2)
-            } else {
-                // Fallback for other system playlists
-                Image(systemName: "music.note.list")
-                    .resizable()
-                    .padding(size * 0.2)
-                    .frame(width: size, height: size)
-                    .background(Color.blue.opacity(0.2))
-                    .cornerRadius(size * 0.1)
-            }
+        if Self.assetCoverImages.contains(coverImage) {
+            // Asset catalog image (system playlists + category playlists)
+            Image(coverImage)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: size, height: size)
+                .clipped()
+                .cornerRadius(size * 0.1)
+                .shadow(radius: 2)
         } else if coverImage.hasPrefix("playlist_") {
             // Custom uploaded image
             CustomPlaylistImageView(imageName: coverImage)
                 .frame(width: size, height: size)
                 .cornerRadius(size * 0.1)
-        } else {
-            // System SF Symbol
+        } else if UIImage(systemName: coverImage) != nil {
+            // Valid SF Symbol
             Image(systemName: coverImage)
                 .resizable()
                 .scaledToFit()
                 .padding(size * 0.25)
                 .frame(width: size, height: size)
                 .background(Color.blue.opacity(0.1))
+                .cornerRadius(size * 0.1)
+        } else {
+            // Fallback
+            Image(systemName: "music.note.list")
+                .resizable()
+                .scaledToFit()
+                .padding(size * 0.2)
+                .frame(width: size, height: size)
+                .background(Color.blue.opacity(0.2))
                 .cornerRadius(size * 0.1)
         }
     }

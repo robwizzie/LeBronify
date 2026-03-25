@@ -45,6 +45,7 @@ struct HomeView: View {
                             }
 
                             PlaylistsSection(selectedTab: $selectedTab)
+                            Starting5Section()
                             AllSongsSection()
                         }
                         .padding(.vertical)
@@ -318,6 +319,61 @@ struct PlaylistsSection: View {
     }
 }
 
+struct Starting5Section: View {
+    @EnvironmentObject var viewModel: LeBronifyViewModel
+    @State private var showingShareCard = false
+
+    var body: some View {
+        let hasPlays = viewModel.allSongs.contains { $0.playCount > 0 }
+        if hasPlays {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("GOAT Debate")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal)
+
+                Button {
+                    showingShareCard = true
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "trophy.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.yellow)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("My Starting 5")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("Share your top played songs")
+                                .font(.system(size: 13))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 16))
+                            .foregroundColor(.yellow)
+                    }
+                    .padding(16)
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.yellow.opacity(0.2), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal)
+            }
+            .sheet(isPresented: $showingShareCard) {
+                ShareCardGeneratorView()
+                    .environmentObject(viewModel)
+            }
+        }
+    }
+}
+
 struct AllSongsSection: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
 
@@ -328,7 +384,7 @@ struct AllSongsSection: View {
                 .foregroundColor(.white)
                 .padding(.horizontal)
 
-            ForEach(viewModel.allSongs) { song in
+            ForEach(viewModel.allSongs.sorted { $0.playCount > $1.playCount }) { song in
                 SongRow(song: song)
                     .padding(.horizontal)
             }
@@ -341,6 +397,7 @@ struct ADOverlayView: View {
     @Binding var selectedTab: Int
     @State private var dismissButtonVisible = false
     @State private var waitMessage = "AD is warming up..."
+    @State private var adDismissText = "Skip AD"
 
     private let dismissTexts = [
         "Trade AD to Dallas",
@@ -357,10 +414,6 @@ struct ADOverlayView: View {
         "AD stretching on the sideline...",
         "Commercial timeout...",
     ]
-
-    private var adDismissText: String {
-        dismissTexts.randomElement() ?? "Skip AD"
-    }
 
     var body: some View {
         ZStack {
@@ -410,6 +463,7 @@ struct ADOverlayView: View {
         }
         .onAppear {
             waitMessage = waitMessages.randomElement() ?? "AD is warming up..."
+            adDismissText = dismissTexts.randomElement() ?? "Skip AD"
             // Show dismiss button after 2 seconds - quick enough to not be annoying
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 withAnimation(.spring()) { dismissButtonVisible = true }

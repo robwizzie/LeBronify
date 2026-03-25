@@ -36,7 +36,7 @@ struct AddToPlaylistView: View {
                     SongInfoHeader(song: song)
                         .padding()
                     
-                    Text("Add to Playlist")
+                    Text("Add to Playbook")
                         .font(.headline)
                         .padding(.top)
                     
@@ -50,7 +50,7 @@ struct AddToPlaylistView: View {
                                 HStack {
                                     Image(systemName: "plus.circle.fill")
                                         .font(.title2)
-                                    Text("Create New Playlist")
+                                    Text("Create New Playbook")
                                         .fontWeight(.medium)
                                     Spacer()
                                     Image(systemName: "chevron.right")
@@ -68,7 +68,7 @@ struct AddToPlaylistView: View {
                             
                             // List of existing playlists
                             if viewModel.playlists.isEmpty {
-                                Text("No playlists yet")
+                                Text("No playbooks yet")
                                     .foregroundColor(.secondary)
                                     .padding()
                             } else {

@@ -79,6 +79,7 @@ struct AnthonyDavisAd: Identifiable {
     let message: String
     
     static func randomAd() -> AnthonyDavisAd {
+        // Only use images that exist: ad_pose1, ad_pose2, anthony_davis_default
         let ads = [
             AnthonyDavisAd(
                 title: "THE BROW KNOWS",
@@ -92,32 +93,32 @@ struct AnthonyDavisAd: Identifiable {
             ),
             AnthonyDavisAd(
                 title: "AD BREAK",
-                imageName: "ad_pose3",
+                imageName: "anthony_davis_default",
                 message: "While LeBron carries the team, I'm carrying these amazing deals!"
             ),
             AnthonyDavisAd(
                 title: "TIMEOUT",
-                imageName: "ad_pose4",
+                imageName: "ad_pose1",
                 message: "Even the King needs a break. AD here to remind you to stay hydrated!"
             ),
             AnthonyDavisAd(
                 title: "INJURY REPORT",
-                imageName: "ad_pose1",
+                imageName: "ad_pose2",
                 message: "AD is questionable tonight with a sore everything. But this ad? Fully healthy."
             ),
             AnthonyDavisAd(
                 title: "STAT CHECK",
-                imageName: "ad_pose2",
+                imageName: "anthony_davis_default",
                 message: "LeBron: 40,000+ points. AD: 1 ad interrupting your music. We are not the same."
             ),
             AnthonyDavisAd(
                 title: "HALFTIME SHOW",
-                imageName: "ad_pose3",
+                imageName: "ad_pose1",
                 message: "Quick halftime break brought to you by The Brow™. Now back to your regularly scheduled bangers."
             ),
             AnthonyDavisAd(
                 title: "AD'S CORNER",
-                imageName: "ad_pose4",
+                imageName: "ad_pose2",
                 message: "Fun fact: LeBron has more rings than AD has games without an injury scare."
             )
         ]

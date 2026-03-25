@@ -211,7 +211,9 @@ struct QueueView: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button {
-                viewModel.removeFromQueue(at: realIndex)
+                viewModel.performTheDecision(song: song) {
+                    viewModel.removeFromQueue(at: realIndex)
+                }
             } label: {
                 Label("Remove from Queue", systemImage: "minus.circle")
             }

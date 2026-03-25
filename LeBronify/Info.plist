@@ -68,6 +68,10 @@
         </dict>
     </dict>
     
+    <!-- Apple Music Usage Description -->
+    <key>NSAppleMusicUsageDescription</key>
+    <string>LeBronify needs access to Apple Music to play The King's parody collection.</string>
+
     <!-- Add the NSSupportsLiveActivities key -->
     <key>NSSupportsLiveActivities</key>
     <true/>

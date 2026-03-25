@@ -33,7 +33,20 @@ class LeBronifyViewModel: ObservableObject {
     
     // Taco Tuesday state
     @Published var isTacoSongPlaying: Bool = false
-    
+
+    // Feature states: Flop Counter, Decision Mode, Chalk Toss, Achievements
+    @Published var showingTechnicalFoul: Bool = false
+    @Published var showingDecision: Bool = false
+    @Published var decisionSong: Song?
+    @Published var decisionDestination: String = ""
+    @Published var showingChalkToss: Bool = false
+    @Published var showingAchievement: Bool = false
+    let achievementManager = AchievementManager.shared
+    private var recentPauseTimes: [Date] = []
+    private var pendingDecisionAction: (() -> Void)?
+    private var pendingChalkAction: (() -> Void)?
+    var sessionSongsPlayed: Set<UUID> = []
+
     // Audio player
     private let audioManager = AudioPlaybackManager.shared
     
@@ -79,7 +92,20 @@ class LeBronifyViewModel: ObservableObject {
 
         // Bind to queue updates
         setupQueueBinding()
-        
+
+        // Watch for achievement unlocks
+        achievementManager.$newlyUnlockedAchievement
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] achievement in
+                if achievement != nil {
+                    // Only show if no other overlay is active
+                    if self?.showingAd != true && self?.showingDecision != true && self?.showingTechnicalFoul != true {
+                        self?.showingAchievement = true
+                    }
+                }
+            }
+            .store(in: &cancellables)
+
         // Don't do audio setup or queue manipulation on init
         // This will prevent audio session errors during startup
         print("ViewModel: Fast initialization complete")
@@ -177,21 +203,21 @@ class LeBronifyViewModel: ObservableObject {
     
     @objc private func handlePlaybackFinished() {
         print("ViewModel: Audio playback finished notification received")
-        
-        // Only proceed if genuine playback has started
-        // This prevents auto-skipping when initializing playback
-        if hasPlaybackStarted {
-            // Double check that we're not at the very beginning of the track
-            if currentPlaybackTime > 1.0 || currentPlaybackTime >= duration - 1.0 {
-                print("ViewModel: Confirmed genuine end of playback, moving to next song")
-                DispatchQueue.main.async { [weak self] in
-                    self?.nextSong()
-                }
-            } else {
-                print("ViewModel: Ignoring playback finished near start of track - likely unintended")
+
+        // Bail if already cleared or no song is playing
+        guard hasPlaybackStarted, currentSong != nil else {
+            print("ViewModel: Ignoring playback finished - no active playback")
+            return
+        }
+
+        // Double check that we're not at the very beginning of the track
+        if currentPlaybackTime > 1.0 || currentPlaybackTime >= duration - 1.0 {
+            print("ViewModel: Confirmed genuine end of playback, moving to next song")
+            DispatchQueue.main.async { [weak self] in
+                self?.nextSong()
             }
         } else {
-            print("ViewModel: Ignoring playback finished notification - playback hasn't genuinely started yet")
+            print("ViewModel: Ignoring playback finished near start of track - likely unintended")
         }
     }
     
@@ -199,10 +225,13 @@ class LeBronifyViewModel: ObservableObject {
     
     func playSong(_ song: Song) {
         print("ViewModel: playSong called for \(song.title)")
-        
+
+        // Track unique songs played this session for achievements
+        sessionSongsPlayed.insert(song.id)
+
         // Ensure audio session notifications are set up on first playback
         setupAudioSessionNotifications()
-        
+
         // Reset playback state flags
         resetPlayCountTracking()
         hasPlaybackStarted = false
@@ -246,7 +275,8 @@ class LeBronifyViewModel: ObservableObject {
             if self.audioManager.playSong(song) {
                 self.isPlaying = true
                 self.currentPlaybackTime = 0
-                self.duration = song.duration
+                // Use the actual audio file duration from AVAudioPlayer, not the model's estimated duration
+                self.duration = self.audioManager.duration > 0 ? self.audioManager.duration : song.duration
                 
                 // Mark that genuine playback has started
                 self.hasPlaybackStarted = true
@@ -324,7 +354,16 @@ class LeBronifyViewModel: ObservableObject {
     
     @objc func togglePlayPause() {
         print("ViewModel: togglePlayPause called with isPlaying=\(isPlaying)")
-        
+
+        // Flop detection: track rapid pause/resume
+        let now = Date()
+        recentPauseTimes.append(now)
+        recentPauseTimes = recentPauseTimes.filter { now.timeIntervalSince($0) < 10 }
+        if recentPauseTimes.count >= 4 && !showingTechnicalFoul {
+            showingTechnicalFoul = true
+            recentPauseTimes.removeAll()
+        }
+
         if isPlaying {
             audioManager.pause()
             isPlaying = false
@@ -392,15 +431,27 @@ class LeBronifyViewModel: ObservableObject {
         // Reset play count tracking
         resetPlayCountTracking()
 
-        // First check if the queue is empty
-        guard !queueManager.currentQueue.isEmpty else {
-            print("ViewModel: Queue is empty, can't play next song")
+        // If no current song or queue is empty, just reset to empty state
+        guard currentSong != nil, !queueManager.currentQueue.isEmpty else {
+            print("ViewModel: No current song or queue empty, resetting to empty state")
+            hasPlaybackStarted = false
+            isPlaying = false
+            audioManager.stop()
+            currentPlaybackTime = 0
+            duration = 0
+            currentSong = nil
+            isTacoSongPlaying = false
+            queueManager.clearQueue()
+            NotificationCenter.default.post(name: NSNotification.Name("PlaybackStopped"), object: nil)
             isTransitioningToNextSong = false
             return
         }
 
-        // Always stop current playback first
+        // Prevent handlePlaybackFinished from re-triggering while we stop
+        hasPlaybackStarted = false
+        // Stop current playback
         audioManager.stop()
+        hasPlaybackStarted = true
 
         // Get the next song from queue manager
         if let nextSong = queueManager.nextSong() {
@@ -424,7 +475,7 @@ class LeBronifyViewModel: ObservableObject {
                     self.currentSong = nextSong
                     self.isPlaying = true
                     self.currentPlaybackTime = 0
-                    self.duration = nextSong.duration
+                    self.duration = self.audioManager.duration > 0 ? self.audioManager.duration : nextSong.duration
                     self.hasPlaybackStarted = true
                     self.startPlayTimeTracking()
                     self.isTacoSongPlaying = nextSong.title == "TACO TUESDAYYYYY"
@@ -445,12 +496,18 @@ class LeBronifyViewModel: ObservableObject {
                 }
             }
         } else {
-            // End of queue reached - stop playback gracefully
-            print("ViewModel: No next song available - end of queue")
-            isPlaying = false
-            currentPlaybackTime = 0
-            isTacoSongPlaying = false
+            // End of queue reached - stop everything and return to empty state
+            print("ViewModel: No next song available - end of queue, clearing now playing")
+            // Set flags BEFORE stopping audio to prevent re-entrant handlePlaybackFinished
             hasPlaybackStarted = false
+            isPlaying = false
+            audioManager.stop()
+            currentPlaybackTime = 0
+            duration = 0
+            currentSong = nil
+            isTacoSongPlaying = false
+            resetPlayCountTracking()
+            queueManager.clearQueue()
             NotificationCenter.default.post(name: NSNotification.Name("PlaybackStopped"), object: nil)
             isTransitioningToNextSong = false
         }
@@ -492,7 +549,7 @@ class LeBronifyViewModel: ObservableObject {
                     self.currentSong = previousSong
                     self.isPlaying = true
                     self.currentPlaybackTime = 0
-                    self.duration = previousSong.duration
+                    self.duration = self.audioManager.duration > 0 ? self.audioManager.duration : previousSong.duration
                     
                     // Start play time tracking
                     self.startPlayTimeTracking()
@@ -555,15 +612,20 @@ class LeBronifyViewModel: ObservableObject {
     }
     
     func clearQueue() {
+        // Prevent handlePlaybackFinished from re-triggering nextSong
+        hasPlaybackStarted = false
+        isPlaying = false
+
+        // Stop all playback and fully reset to empty state
+        audioManager.stop()
+        currentPlaybackTime = 0
+        duration = 0
+        currentSong = nil
+        isTacoSongPlaying = false
+        isTransitioningToNextSong = false
+        resetPlayCountTracking()
         queueManager.clearQueue()
-        
-        // If audio is playing, stop it
-        if isPlaying {
-            audioManager.stop()
-            isPlaying = false
-            currentPlaybackTime = 0
-            currentSong = nil
-        }
+        NotificationCenter.default.post(name: NSNotification.Name("PlaybackStopped"), object: nil)
     }
     
     func moveQueueItem(from sourceIndex: Int, to destinationIndex: Int) {
@@ -581,29 +643,27 @@ class LeBronifyViewModel: ObservableObject {
     // MARK: - Random Queue
     
     func playRandomPresetQueue() {
-        print("ViewModel: playRandomPresetQueue called")
-        
-        // First stop any current playback
-        audioManager.stop()
-        isPlaying = false
-        
-        // Generate a diverse random queue
-        let allAvailableSongs = dataManager.loadSongs()
-        
-        if !allAvailableSongs.isEmpty {
-            // Generate a good random mix
-            let randomSongs = generateRandomMix(from: allAvailableSongs, count: 10)
-            print("ViewModel: Generated random queue with \(randomSongs.count) songs")
-            
-            // Set the new queue
-            queueManager.setQueue(songs: randomSongs)
-            
-            // Play the first song
-            if let firstSong = queueManager.currentSongInQueue {
-                playSong(firstSong)
+        performChalkToss { [weak self] in
+            guard let self = self else { return }
+            print("ViewModel: playRandomPresetQueue called")
+
+            // First stop any current playback
+            self.audioManager.stop()
+            self.isPlaying = false
+
+            // Generate a diverse random queue
+            let allAvailableSongs = self.dataManager.loadSongs()
+
+            if !allAvailableSongs.isEmpty {
+                let randomSongs = self.generateRandomMix(from: allAvailableSongs, count: 10)
+                print("ViewModel: Generated random queue with \(randomSongs.count) songs")
+                self.queueManager.setQueue(songs: randomSongs)
+                if let firstSong = self.queueManager.currentSongInQueue {
+                    self.playSong(firstSong)
+                }
+            } else {
+                print("ViewModel: No songs available for random queue")
             }
-        } else {
-            print("ViewModel: No songs available for random queue")
         }
     }
     
@@ -752,6 +812,8 @@ class LeBronifyViewModel: ObservableObject {
         )
         
         print("ViewModel: Created playlist with ID: \(newPlaylist.id)")
+
+        checkForAchievements()
     }
     
     // Helper method to save custom images
@@ -1045,19 +1107,67 @@ class LeBronifyViewModel: ObservableObject {
     
     func toggleFavorite(for songID: UUID) {
         dataManager.toggleFavorite(for: songID)
-        
+
         // Update any references to the song
         allSongs = dataManager.loadSongs()
         refreshDynamicPlaylists()
-        
+
         // Update currentSong if it's the one being toggled
         if let currentSong = currentSong, currentSong.id == songID {
             self.currentSong = allSongs.first(where: { $0.id == songID })
         }
+
+        checkForAchievements()
     }
     
+    // MARK: - The Decision Mode
+
+    private static let decisionDestinations = [
+        "South Beach", "the G-League", "Space Jam 3",
+        "Taco Tuesday", "the bench", "free agency",
+        "a trade to Sacramento", "LeBron's barbershop",
+        "the clearance rack", "a 10-day contract in China"
+    ]
+
+    func performTheDecision(song: Song, action: @escaping () -> Void) {
+        decisionSong = song
+        decisionDestination = Self.decisionDestinations.randomElement() ?? "South Beach"
+        pendingDecisionAction = action
+        showingDecision = true
+    }
+
+    func executeDecision() {
+        pendingDecisionAction?()
+        pendingDecisionAction = nil
+        showingDecision = false
+        decisionSong = nil
+    }
+
+    // MARK: - Chalk Toss
+
+    func performChalkToss(then action: @escaping () -> Void) {
+        pendingChalkAction = action
+        showingChalkToss = true
+    }
+
+    func chalkTossComplete() {
+        pendingChalkAction?()
+        pendingChalkAction = nil
+        showingChalkToss = false
+    }
+
+    // MARK: - Achievement Checking
+
+    func checkForAchievements() {
+        achievementManager.checkAchievements(
+            songs: allSongs,
+            playlists: playlists,
+            sessionSongsPlayed: sessionSongsPlayed
+        )
+    }
+
     // MARK: - AD Management
-    
+
     func showRandomAd() {
         // Use the TacoTuesday ads on Tuesday with higher probability
         if tacoManager.isTacoTuesday && Double.random(in: 0...1) < 0.4 {
@@ -1088,7 +1198,15 @@ class LeBronifyViewModel: ObservableObject {
             guard let self = self, self.isPlaying else { return }
 
             let newTime = self.audioManager.currentTime
+
+            // Only update currentPlaybackTime from the timer when user is NOT dragging the slider
             self.currentPlaybackTime = newTime
+
+            // Also keep duration in sync with actual audio player duration
+            let actualDuration = self.audioManager.duration
+            if actualDuration > 0 && abs(self.duration - actualDuration) > 1.0 {
+                self.duration = actualDuration
+            }
 
             // Update Now Playing info for Dynamic Island / Lock Screen
             if let song = self.currentSong {
@@ -1097,18 +1215,23 @@ class LeBronifyViewModel: ObservableObject {
                     artistName: song.artist,
                     albumArt: song.albumArt,
                     currentTime: newTime,
-                    duration: song.duration,
+                    duration: self.duration,
                     isPlaying: true
                 )
             }
         }
         
-        // Anthony Davis AD timer - less frequent so it's funny not annoying
-        adTimer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
+        // Anthony Davis AD timer - show first AD quickly, then keep them coming
+        // Fire first AD after 15 seconds so users see it early
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15.0) { [weak self] in
+            guard let self = self, self.isPlaying, !self.showingAd else { return }
+            self.showRandomAd()
+        }
+        // Then check every 20 seconds with 60% chance
+        adTimer = Timer.scheduledTimer(withTimeInterval: 20.0, repeats: true) { [weak self] _ in
             guard let self = self, self.isPlaying, !self.showingAd else { return }
 
-            // 15% chance to show an ad per minute
-            if Double.random(in: 0...1) < 0.15 && !self.isConnectedToCarPlay() {
+            if Double.random(in: 0...1) < 0.60 {
                 self.showRandomAd()
             }
         }
@@ -1190,8 +1313,10 @@ class LeBronifyViewModel: ObservableObject {
     
     // Function to get a random song
     func playRandomSong() {
-        if let randomSong = allSongs.randomElement() {
-            playSong(randomSong)
+        performChalkToss { [weak self] in
+            if let randomSong = self?.allSongs.randomElement() {
+                self?.playSong(randomSong)
+            }
         }
     }
     
@@ -1296,6 +1421,8 @@ class LeBronifyViewModel: ObservableObject {
                 object: nil
             )
         }
+
+        checkForAchievements()
     }
     
     // MARK: - Media Playback Controls
@@ -1416,8 +1543,8 @@ class LeBronifyViewModel: ObservableObject {
                 if self.audioManager.playSong(firstSong) {
                     self.isPlaying = true
                     self.currentPlaybackTime = 0
-                    self.duration = firstSong.duration
-                    
+                    self.duration = self.audioManager.duration > 0 ? self.audioManager.duration : firstSong.duration
+
                     // Mark that playback has genuinely started
                     self.hasPlaybackStarted = true
                     
