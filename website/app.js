@@ -191,7 +191,7 @@ const colorCanvas = document.createElement('canvas');
 const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
 colorCanvas.width = 50;
 colorCanvas.height = 50;
-let currentGradientColor = 'rgba(255,215,0,0.25)';
+let currentGradientColor = 'rgba(255,215,0,0.35)';
 
 function extractDominantColor(imgSrc, callback) {
     const img = new Image();
@@ -200,31 +200,60 @@ function extractDominantColor(imgSrc, callback) {
         colorCtx.drawImage(img, 0, 0, 50, 50);
         try {
             const data = colorCtx.getImageData(0, 0, 50, 50).data;
-            let r = 0, g = 0, b = 0, count = 0;
-            // Sample every 4th pixel from center region for more accurate color
-            for (let y = 10; y < 40; y += 2) {
-                for (let x = 10; x < 40; x += 2) {
+            // Collect color buckets for most vibrant/saturated color
+            const buckets = {};
+            for (let y = 5; y < 45; y += 2) {
+                for (let x = 5; x < 45; x += 2) {
                     const i = (y * 50 + x) * 4;
-                    // Skip very dark and very bright pixels
-                    const brightness = data[i] + data[i+1] + data[i+2];
-                    if (brightness > 60 && brightness < 700) {
-                        r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+                    const r = data[i], g = data[i+1], b = data[i+2];
+                    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                    const brightness = r + g + b;
+                    const saturation = max > 0 ? (max - min) / max : 0;
+                    // Prefer saturated, non-dark, non-white pixels
+                    if (brightness > 80 && brightness < 650 && saturation > 0.15) {
+                        // Quantize to 32-level buckets for grouping
+                        const qr = Math.round(r / 32) * 32;
+                        const qg = Math.round(g / 32) * 32;
+                        const qb = Math.round(b / 32) * 32;
+                        const key = `${qr},${qg},${qb}`;
+                        if (!buckets[key]) buckets[key] = { r: 0, g: 0, b: 0, count: 0, satSum: 0 };
+                        buckets[key].r += r;
+                        buckets[key].g += g;
+                        buckets[key].b += b;
+                        buckets[key].count++;
+                        buckets[key].satSum += saturation;
                     }
                 }
             }
-            if (count > 0) {
-                r = Math.round(r / count);
-                g = Math.round(g / count);
-                b = Math.round(b / count);
-                callback(`rgba(${r},${g},${b},0.25)`);
+            // Pick the bucket with highest (count * avg saturation) - most prominent vibrant color
+            let best = null, bestScore = 0;
+            for (const key in buckets) {
+                const b = buckets[key];
+                const score = b.count * (b.satSum / b.count);
+                if (score > bestScore) { bestScore = score; best = b; }
+            }
+            if (best && best.count > 0) {
+                const r = Math.round(best.r / best.count);
+                const g = Math.round(best.g / best.count);
+                const b = Math.round(best.b / best.count);
+                // Boost saturation for more vivid gradient
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                let br = r, bg = g, bb = b;
+                if (max > 0) {
+                    const factor = 1.3; // Saturation boost
+                    br = Math.min(255, Math.round(max - (max - r) * factor));
+                    bg = Math.min(255, Math.round(max - (max - g) * factor));
+                    bb = Math.min(255, Math.round(max - (max - b) * factor));
+                }
+                callback(`rgba(${br},${bg},${bb},0.55)`);
             } else {
-                callback('rgba(255,215,0,0.25)');
+                callback('rgba(255,215,0,0.35)');
             }
         } catch(e) {
-            callback('rgba(255,215,0,0.25)');
+            callback('rgba(255,215,0,0.35)');
         }
     };
-    img.onerror = () => callback('rgba(255,215,0,0.25)');
+    img.onerror = () => callback('rgba(255,215,0,0.35)');
     img.src = imgSrc;
 }
 
@@ -232,7 +261,7 @@ function updatePlayerGradient(color) {
     currentGradientColor = color;
     const scroll = $('.player-view-scroll');
     if (scroll) {
-        scroll.style.background = `linear-gradient(180deg, ${color} 0%, var(--bg) 40%)`;
+        scroll.style.background = `linear-gradient(180deg, ${color} 0%, var(--bg) 55%)`;
     }
 }
 
@@ -250,19 +279,38 @@ function triggerChalkToss() {
     chalkContainer = document.createElement('div');
     chalkContainer.className = 'chalk-toss-overlay';
 
-    // Create 20 chalk particles
-    for (let i = 0; i < 20; i++) {
+    // Clap hands that come together
+    const leftHand = document.createElement('div');
+    leftHand.className = 'chalk-hand chalk-hand-left';
+    leftHand.textContent = '🤲';
+    const rightHand = document.createElement('div');
+    rightHand.className = 'chalk-hand chalk-hand-right';
+    rightHand.textContent = '🤲';
+    chalkContainer.appendChild(leftHand);
+    chalkContainer.appendChild(rightHand);
+
+    // Flash on clap impact
+    const flash = document.createElement('div');
+    flash.className = 'chalk-flash';
+    chalkContainer.appendChild(flash);
+
+    // Burst particles from center (after clap)
+    for (let i = 0; i < 30; i++) {
         const dot = document.createElement('div');
         dot.className = 'chalk-dot';
-        const size = 2 + Math.random() * 5;
-        const left = 15 + Math.random() * 70;
-        const delay = Math.random() * 0.8;
-        const drift = -30 + Math.random() * 60;
+        const size = 2 + Math.random() * 6;
+        // Burst outward from center in all upward directions
+        const angle = -Math.PI * (0.1 + Math.random() * 0.8); // upward arc
+        const distance = 100 + Math.random() * 250;
+        const dx = Math.cos(angle) * distance * (Math.random() > 0.5 ? 1 : -1);
+        const dy = -80 - Math.random() * 280; // always upward
+        const dur = 1.2 + Math.random() * 1.0;
+        const burstDelay = 0.42 + Math.random() * 0.15; // slight stagger after clap
         dot.style.cssText = `
             width: ${size}px; height: ${size}px;
-            left: ${left}%; bottom: 30%;
-            animation-delay: ${delay}s;
-            --drift: ${drift}px;
+            left: 50%; bottom: 38%;
+            --dx: ${dx}px; --dy: ${dy}px;
+            --dur: ${dur}s; --burst-delay: ${burstDelay}s;
         `;
         chalkContainer.appendChild(dot);
     }
@@ -272,7 +320,7 @@ function triggerChalkToss() {
     // Remove after animation completes
     chalkTimeout = setTimeout(() => {
         if (chalkContainer) { chalkContainer.remove(); chalkContainer = null; }
-    }, 3000);
+    }, 3500);
 }
 
 // -------------------------------------------
@@ -667,7 +715,7 @@ function renderPlayerFull() {
         if (contentEl) contentEl.style.display = 'none';
         // Reset gradient for empty state
         const scroll = $('.player-view-scroll');
-        if (scroll) scroll.style.background = `linear-gradient(180deg, rgba(255,215,0,0.12) 0%, var(--bg) 40%)`;
+        if (scroll) scroll.style.background = `linear-gradient(180deg, rgba(255,215,0,0.35) 0%, var(--bg) 55%)`;
         return;
     }
 
