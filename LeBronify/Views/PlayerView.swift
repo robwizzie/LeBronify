@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AVFoundation
+import UIKit
 
 // Sheet types for PlayerView
 enum PlayerSheetType: Identifiable {
@@ -27,6 +28,7 @@ struct PlayerView: View {
     @State private var activeSheet: PlayerSheetType?
     @State private var isDraggingSlider = false
     @State private var dragPosition: Double? = nil
+    @State private var dominantColor: Color = .yellow
 
     // LeBronify dark palette
     private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
@@ -35,10 +37,10 @@ struct PlayerView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Dynamic gradient background
+                // Dynamic gradient background based on album art color
                 if viewModel.currentSong != nil {
                     LinearGradient(
-                        colors: [Color.yellow.opacity(0.25), bgColor],
+                        colors: [dominantColor.opacity(0.45), bgColor],
                         startPoint: .top,
                         endPoint: .center
                     )
@@ -55,6 +57,9 @@ struct PlayerView: View {
                 }
             }
         }
+        .onChange(of: viewModel.currentSong?.id) { _ in
+            updateDominantColor()
+        }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .queue:
@@ -66,7 +71,10 @@ struct PlayerView: View {
                 }
             }
         }
-        .onAppear { setupPlayCountObserver() }
+        .onAppear {
+            setupPlayCountObserver()
+            updateDominantColor()
+        }
         .onDisappear {
             if let observer = playCountObserver {
                 NotificationCenter.default.removeObserver(observer)
@@ -76,61 +84,61 @@ struct PlayerView: View {
         .preferredColorScheme(.dark)
     }
 
-    // MARK: - Player Content (Fixed Layout)
+    // MARK: - Player Content (Scrollable, Spotify-style)
 
     @ViewBuilder
     private func playerContent(song: Song, geometry: GeometryProxy) -> some View {
-        // Calculate album art size based on available space
-        let safeHeight = geometry.size.height - geometry.safeAreaInsets.top - geometry.safeAreaInsets.bottom
-        let artSize = min(geometry.size.width - 64, safeHeight * 0.38, 320)
+        let artSize = geometry.size.width - 48
 
-        VStack(spacing: 0) {
-            // Album art - takes up flexible space
-            Image(song.albumArt)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: artSize, height: artSize)
-                .cornerRadius(12)
-                .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
-                .padding(.top, 16)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 0) {
+                // Large album art - Spotify style
+                Image(song.albumArt)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: artSize, height: artSize)
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
+                    .padding(.top, 16)
 
-            Spacer().frame(minHeight: 8, maxHeight: 20)
+                Spacer().frame(height: 28)
 
-            // Song info
-            VStack(spacing: 4) {
-                Text(song.title)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
+                // Song info
+                VStack(spacing: 4) {
+                    Text(song.title)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
 
-                Text(song.artist)
-                    .font(.system(size: 16))
-                    .foregroundColor(.white.opacity(0.6))
-                    .lineLimit(1)
+                    Text(song.artist)
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.6))
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 24)
+
+                Spacer().frame(height: 20)
+
+                // Progress bar
+                progressBar(geometry: geometry)
+
+                Spacer().frame(height: 20)
+
+                // Main playback controls
+                playbackControls
+
+                Spacer().frame(height: 28)
+
+                // Secondary action row
+                actionRow(song: song)
+
+                Spacer().frame(height: 28)
+
+                // Queue preview - showing next 6 songs
+                queuePreview
+
+                Spacer().frame(height: 24)
             }
-            .padding(.horizontal, 24)
-
-            Spacer().frame(minHeight: 8, maxHeight: 16)
-
-            // Progress bar - NO ScrollView wrapping this, so gestures work perfectly
-            progressBar(geometry: geometry)
-
-            Spacer().frame(minHeight: 4, maxHeight: 12)
-
-            // Main playback controls
-            playbackControls
-
-            Spacer().frame(minHeight: 4, maxHeight: 12)
-
-            // Secondary action row
-            actionRow(song: song)
-
-            Spacer().frame(minHeight: 8, maxHeight: 20)
-
-            // Queue preview - compact, showing next 2 songs
-            queuePreview
-
-            Spacer().frame(minHeight: 0)
         }
         .padding(.bottom, 8)
     }
@@ -277,6 +285,10 @@ struct PlayerView: View {
             actionButton(icon: "sparkles", label: "Mix", color: .white.opacity(0.5)) {
                 viewModel.playRandomPresetQueue()
             }
+
+            actionButton(icon: "trash", label: "Clear", color: .white.opacity(0.5)) {
+                viewModel.clearQueue()
+            }
         }
         .padding(.horizontal, 16)
     }
@@ -304,10 +316,10 @@ struct PlayerView: View {
     private var queuePreview: some View {
         let queue = viewModel.queueManager.currentQueue
         let currentIdx = viewModel.queueManager.queueIndex
-        let upNext = currentIdx + 1 < queue.count ? Array(queue[(currentIdx + 1)..<min(currentIdx + 3, queue.count)]) : []
+        let upNext = currentIdx + 1 < queue.count ? Array(queue[(currentIdx + 1)..<min(currentIdx + 7, queue.count)]) : []
 
         if !upNext.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("On The Bench")
                         .font(.system(size: 13, weight: .bold))
@@ -423,6 +435,116 @@ struct PlayerView: View {
         let minutes = Int(timeInterval) / 60
         let seconds = Int(timeInterval) % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private func updateDominantColor() {
+        guard let song = viewModel.currentSong,
+              let uiImage = UIImage(named: song.albumArt) else {
+            dominantColor = .yellow
+            return
+        }
+
+        // Render into a CGContext with explicit RGBA byte order so we know the channel layout
+        let w = 80
+        let h = 80
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        // Use RGBA with non-premultiplied alpha so bytes are always [R, G, B, A]
+        guard let context = CGContext(
+            data: nil,
+            width: w, height: h,
+            bitsPerComponent: 8,
+            bytesPerRow: w * 4,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        ) else {
+            dominantColor = .yellow
+            return
+        }
+        context.draw(uiImage.cgImage!, in: CGRect(x: 0, y: 0, width: w, height: h))
+
+        guard let ptr = context.data?.assumingMemoryBound(to: UInt8.self) else {
+            dominantColor = .yellow
+            return
+        }
+
+        let bytesPerPixel = 4
+        let bytesPerRow = w * 4
+
+        // Quantize each pixel's RGB to 4-bit per channel (16 levels each = 4096 possible colors)
+        // Count raw frequency — the color that appears most wins
+        var colorCounts: [Int: Int] = [:]  // quantized color key -> pixel count
+        var colorTotals: [Int: (r: CGFloat, g: CGFloat, b: CGFloat)] = [:]  // accumulated actual RGB
+
+        for y in 0..<h {
+            for x in 0..<w {
+                let offset = y * bytesPerRow + x * bytesPerPixel
+                // Byte order is guaranteed RGBA by the context we created
+                let r = CGFloat(ptr[offset]) / 255.0
+                let g = CGFloat(ptr[offset + 1]) / 255.0
+                let b = CGFloat(ptr[offset + 2]) / 255.0
+
+                // Skip near-black and near-white pixels (not useful for gradient)
+                let maxC = max(r, g, b)
+                let minC = min(r, g, b)
+                if maxC < 0.08 { continue }  // very dark
+                if minC > 0.90 { continue }  // very white
+
+                // Quantize to 4 bits per channel
+                let qr = Int(r * 15.0)
+                let qg = Int(g * 15.0)
+                let qb = Int(b * 15.0)
+                let key = (qr << 8) | (qg << 4) | qb
+
+                colorCounts[key, default: 0] += 1
+                let prev = colorTotals[key] ?? (0, 0, 0)
+                colorTotals[key] = (prev.r + r, prev.g + g, prev.b + b)
+            }
+        }
+
+        // Find the quantized color with the highest pixel count
+        guard let (bestKey, bestCount) = colorCounts.max(by: { $0.value < $1.value }),
+              bestCount > 0,
+              let totals = colorTotals[bestKey] else {
+            withAnimation(.easeInOut(duration: 0.6)) { dominantColor = .yellow }
+            return
+        }
+
+        // Average the actual RGB values in that bucket for accuracy
+        let count = CGFloat(bestCount)
+        var avgR = totals.r / count
+        var avgG = totals.g / count
+        var avgB = totals.b / count
+
+        // If the winner is too gray/muted, boost saturation slightly for a nicer gradient
+        let maxVal = max(avgR, avgG, avgB)
+        let minVal = min(avgR, avgG, avgB)
+        let sat = maxVal > 0 ? (maxVal - minVal) / maxVal : 0
+
+        if sat < 0.2 && maxVal > 0.15 {
+            // Very desaturated — boost by pulling channels apart from the mean
+            let mean = (avgR + avgG + avgB) / 3.0
+            avgR = mean + (avgR - mean) * 2.0
+            avgG = mean + (avgG - mean) * 2.0
+            avgB = mean + (avgB - mean) * 2.0
+            avgR = max(0, min(1, avgR))
+            avgG = max(0, min(1, avgG))
+            avgB = max(0, min(1, avgB))
+        }
+
+        // Ensure brightness is high enough for a visible gradient
+        let brightness = max(avgR, avgG, avgB)
+        if brightness < 0.4 {
+            let boost = 0.4 / brightness
+            avgR = min(1.0, avgR * boost)
+            avgG = min(1.0, avgG * boost)
+            avgB = min(1.0, avgB * boost)
+        }
+
+        let result = Color(red: Double(avgR), green: Double(avgG), blue: Double(avgB))
+
+        withAnimation(.easeInOut(duration: 0.6)) {
+            dominantColor = result
+        }
     }
 
     private func setupPlayCountObserver() {

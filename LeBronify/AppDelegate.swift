@@ -177,7 +177,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         // Like/dislike commands (for favorite toggle)
         commandCenter.likeCommand.isEnabled = true
-        commandCenter.likeCommand.localizedTitle = "Favorite"
+        commandCenter.likeCommand.localizedTitle = "All-Star"
         commandCenter.likeCommand.addTarget { event in
             if let vm = viewModel, let currentSong = vm.currentSong {
                 // Only toggle to favorite if not already a favorite
@@ -190,7 +190,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         }
         
         commandCenter.dislikeCommand.isEnabled = true
-        commandCenter.dislikeCommand.localizedTitle = "Remove Favorite"
+        commandCenter.dislikeCommand.localizedTitle = "Remove All-Star"
         commandCenter.dislikeCommand.addTarget { event in
             if let vm = viewModel, let currentSong = vm.currentSong {
                 // Only remove from favorites if it is a favorite

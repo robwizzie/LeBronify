@@ -30,12 +30,12 @@ class TacoTuesdayManager {
         return [
             AnthonyDavisAd(
                 title: "TACO TUESDAY SPECIAL!",
-                imageName: "taco_tuesday_ad_1",
+                imageName: "anthony_davis_default",
                 message: "LeBron says it's TACO TUESDAYYYYY! Get your tacos now!"
             ),
             AnthonyDavisAd(
                 title: "TACO TIME WITH THE KING",
-                imageName: "taco_tuesday_ad_2",
+                imageName: "ad_pose1",
                 message: "Join LeBron for his famous Taco Tuesday celebration!"
             )
         ]

@@ -105,29 +105,75 @@ struct MainTabView: View {
                 .transition(.move(edge: .bottom))
             }
         }
-        .overlay(
-            Group {
-                if viewModel.showingAd {
-                    ADOverlayView(selectedTab: $selectedTab)
-                }
-            }
-        )
-        .overlay(
-            Group {
-                if showTacoRain && TacoTuesdayManager.shared.isTacoTuesday {
-                    TacoRain()
-                        .allowsHitTesting(false)
-                        .transition(.opacity)
-                        .zIndex(1000)
-                }
-            }
-        )
+        .overlay(adOverlay)
+        .overlay(tacoRainOverlay)
+        .overlay(technicalFoulOverlay)
+        .overlay(decisionOverlay)
+        .overlay(chalkTossOverlay)
+        .overlay(achievementOverlay)
         .preferredColorScheme(.dark)
         .onAppear { setupTacoNotifications() }
         .onDisappear {
             if let observer = tacoObserver {
                 NotificationCenter.default.removeObserver(observer)
                 tacoObserver = nil
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var adOverlay: some View {
+        if viewModel.showingAd {
+            ADOverlayView(selectedTab: $selectedTab)
+        }
+    }
+
+    @ViewBuilder
+    private var tacoRainOverlay: some View {
+        if showTacoRain && TacoTuesdayManager.shared.isTacoTuesday {
+            TacoRain()
+                .allowsHitTesting(false)
+                .transition(.opacity)
+                .zIndex(1000)
+        }
+    }
+
+    @ViewBuilder
+    private var technicalFoulOverlay: some View {
+        if viewModel.showingTechnicalFoul {
+            TechnicalFoulOverlay(isShowing: $viewModel.showingTechnicalFoul)
+        }
+    }
+
+    @ViewBuilder
+    private var decisionOverlay: some View {
+        if viewModel.showingDecision, let song = viewModel.decisionSong {
+            TheDecisionOverlay(
+                song: song,
+                destination: viewModel.decisionDestination
+            ) {
+                viewModel.executeDecision()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var chalkTossOverlay: some View {
+        if viewModel.showingChalkToss {
+            ChalkTossView {
+                viewModel.chalkTossComplete()
+            }
+            .zIndex(999)
+        }
+    }
+
+    @ViewBuilder
+    private var achievementOverlay: some View {
+        if viewModel.showingAchievement,
+           let achievement = viewModel.achievementManager.newlyUnlockedAchievement {
+            AchievementUnlockedOverlay(achievement: achievement) {
+                viewModel.showingAchievement = false
+                viewModel.achievementManager.newlyUnlockedAchievement = nil
             }
         }
     }

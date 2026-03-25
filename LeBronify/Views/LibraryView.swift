@@ -20,7 +20,7 @@ struct LibraryView: View {
     @State private var showingAddPlaylist = false
     @State private var sortOption: SortOption = .title
 
-    var tabs = ["Playbooks", "All-Stars"]
+    var tabs = ["Playbooks", "All-Stars", "Trophies"]
 
     private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
 
@@ -38,6 +38,8 @@ struct LibraryView: View {
                                 .tag(0)
                             FavoritesTabView(sortOption: $sortOption)
                                 .tag(1)
+                            AchievementsTabView()
+                                .tag(2)
                         }
                         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                     }
@@ -127,7 +129,7 @@ struct PlaylistsTabView: View {
                     
                     // System playlists section
                     if !systemPlaylists.isEmpty {
-                        Text("System Playlists")
+                        Text("System Playbooks")
                             .font(.headline)
                             .foregroundColor(.secondary)
                             .padding(.horizontal)
@@ -140,7 +142,7 @@ struct PlaylistsTabView: View {
                     
                     // User playlists section
                     if !userPlaylists.isEmpty {
-                        Text("Your Custom Playlists")
+                        Text("Your Custom Playbooks")
                             .font(.headline)
                             .foregroundColor(.secondary)
                             .padding(.horizontal)
@@ -412,7 +414,7 @@ struct FavoritesTabView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Text("Favorites")
+                    Text("All-Stars")
                         .font(.title2)
                         .fontWeight(.bold)
                     
@@ -465,7 +467,7 @@ struct FavoritesTabView: View {
 struct EmptyFavoritesView: View {
     var body: some View {
         VStack(spacing: 20) {
-            Image(systemName: "heart.slash")
+            Image(systemName: "star.slash")
                 .font(.system(size: 50))
                 .foregroundColor(.yellow.opacity(0.4))
                 .padding(.top, 50)
@@ -533,7 +535,7 @@ struct PlaylistCreatorView: View {
                         VStack(spacing: 20) {
                             // Form fields and controls would go here
                             // For now just showing a message
-                            Text("Create a New Playlist")
+                            Text("Create a New Playbook")
                                 .font(.title)
                                 .foregroundColor(.white)
                                 .padding()
@@ -547,7 +549,7 @@ struct PlaylistCreatorView: View {
                         }
                     }
                 }
-                .navigationTitle("Create Playlist")
+                .navigationTitle("Create Playbook")
                 .navigationBarTitleDisplayMode(.inline)
             }
         }
