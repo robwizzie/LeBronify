@@ -185,8 +185,101 @@ function getFavorites() { return SONGS.filter(s => getSongData(s.id).isFavorite)
 function isTacoTuesday() { return new Date().getDay() === 2; }
 
 // -------------------------------------------
+// Dynamic Color Extraction (like iOS dynamic gradient)
+// -------------------------------------------
+const colorCanvas = document.createElement('canvas');
+const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
+colorCanvas.width = 50;
+colorCanvas.height = 50;
+let currentGradientColor = 'rgba(255,215,0,0.25)';
+
+function extractDominantColor(imgSrc, callback) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+        colorCtx.drawImage(img, 0, 0, 50, 50);
+        try {
+            const data = colorCtx.getImageData(0, 0, 50, 50).data;
+            let r = 0, g = 0, b = 0, count = 0;
+            // Sample every 4th pixel from center region for more accurate color
+            for (let y = 10; y < 40; y += 2) {
+                for (let x = 10; x < 40; x += 2) {
+                    const i = (y * 50 + x) * 4;
+                    // Skip very dark and very bright pixels
+                    const brightness = data[i] + data[i+1] + data[i+2];
+                    if (brightness > 60 && brightness < 700) {
+                        r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+                    }
+                }
+            }
+            if (count > 0) {
+                r = Math.round(r / count);
+                g = Math.round(g / count);
+                b = Math.round(b / count);
+                callback(`rgba(${r},${g},${b},0.25)`);
+            } else {
+                callback('rgba(255,215,0,0.25)');
+            }
+        } catch(e) {
+            callback('rgba(255,215,0,0.25)');
+        }
+    };
+    img.onerror = () => callback('rgba(255,215,0,0.25)');
+    img.src = imgSrc;
+}
+
+function updatePlayerGradient(color) {
+    currentGradientColor = color;
+    const scroll = $('.player-view-scroll');
+    if (scroll) {
+        scroll.style.background = `linear-gradient(180deg, ${color} 0%, var(--bg) 40%)`;
+    }
+}
+
+// -------------------------------------------
+// Chalk Toss Animation
+// -------------------------------------------
+let chalkContainer = null;
+let chalkTimeout = null;
+
+function triggerChalkToss() {
+    // Remove previous chalk toss
+    if (chalkContainer) { chalkContainer.remove(); chalkContainer = null; }
+    if (chalkTimeout) clearTimeout(chalkTimeout);
+
+    chalkContainer = document.createElement('div');
+    chalkContainer.className = 'chalk-toss-overlay';
+
+    // Create 20 chalk particles
+    for (let i = 0; i < 20; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'chalk-dot';
+        const size = 2 + Math.random() * 5;
+        const left = 15 + Math.random() * 70;
+        const delay = Math.random() * 0.8;
+        const drift = -30 + Math.random() * 60;
+        dot.style.cssText = `
+            width: ${size}px; height: ${size}px;
+            left: ${left}%; bottom: 30%;
+            animation-delay: ${delay}s;
+            --drift: ${drift}px;
+        `;
+        chalkContainer.appendChild(dot);
+    }
+
+    document.body.appendChild(chalkContainer);
+
+    // Remove after animation completes
+    chalkTimeout = setTimeout(() => {
+        if (chalkContainer) { chalkContainer.remove(); chalkContainer = null; }
+    }, 3000);
+}
+
+// -------------------------------------------
 // Audio Playback
 // -------------------------------------------
+let _isSkipping = false; // Guard against double-fire like iOS
+
 function playSong(song, fromQueue) {
     if (!fromQueue) {
         state.queue = [song];
@@ -195,6 +288,7 @@ function playSong(song, fromQueue) {
     audio.src = audioPath(song.audio);
     audio.play().catch(() => {});
     state.playing = true;
+    _isSkipping = false;
 
     if (audio._trackTimeout) clearTimeout(audio._trackTimeout);
     const trackPlay = setTimeout(() => {
@@ -207,6 +301,14 @@ function playSong(song, fromQueue) {
         renderAll();
     }, 10000);
     audio._trackTimeout = trackPlay;
+
+    // Extract dominant color for dynamic gradient
+    extractDominantColor(imgPath(song.image), (color) => {
+        updatePlayerGradient(color);
+    });
+
+    // Trigger chalk toss animation
+    triggerChalkToss();
 
     updateUI();
     updateMediaSession(song);
@@ -235,11 +337,13 @@ function togglePlay() {
 
 function nextSong() {
     if (state.queue.length === 0) return;
-    if (state.repeat === 'one') { audio.currentTime = 0; audio.play(); return; }
+    if (_isSkipping) return; // Guard against double-fire
+    _isSkipping = true;
+    if (state.repeat === 'one') { audio.currentTime = 0; audio.play(); _isSkipping = false; return; }
     state.queueIndex++;
     if (state.queueIndex >= state.queue.length) {
         if (state.repeat === 'all') state.queueIndex = 0;
-        else { state.playing = false; updateUI(); return; }
+        else { state.playing = false; _isSkipping = false; updateUI(); return; }
     }
     playSong(state.queue[state.queueIndex], true);
 }
@@ -302,6 +406,16 @@ function playRandomMix() {
     playSong(state.queue[0], true);
 }
 
+function showToast(msg) {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+}
+
 function addToQueue(song) {
     state.queue.push(song);
     if (state.queue.length === 1) {
@@ -309,11 +423,13 @@ function addToQueue(song) {
         playSong(song, true);
     }
     renderQueue();
+    showToast(`Added "${song.title}" to queue`);
 }
 
 function playNext(song) {
     state.queue.splice(state.queueIndex + 1, 0, song);
     renderQueue();
+    showToast(`"${song.title}" up next`);
 }
 
 function clearQueue() {
@@ -366,9 +482,15 @@ function showView(name) {
     if (view) view.classList.add('active');
     $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === name));
     $$('.mobile-tab').forEach(n => n.classList.toggle('active', n.dataset.view === name));
+    // Always re-render the target view with fresh data
+    if (name === 'home') renderHome();
     if (name === 'vault') renderVault();
     if (name === 'search') $('#search-input').focus();
     if (name === 'player') renderPlayerFull();
+    if (name === 'playlist-detail') {
+        refreshPlaylistDetail();
+    }
+    updateUI();
 }
 
 // -------------------------------------------
@@ -498,7 +620,7 @@ function renderSidebarPlaylists() {
     el.innerHTML = items.map(p => `<button class="sidebar-pl-item" data-playlist-id="${p.id}">${p.name}</button>`).join('');
 }
 
-function openPlaylistDetail(playlistId) {
+function getPlaylistData(playlistId) {
     let songs = [];
     let name = '';
     let art = '';
@@ -511,7 +633,13 @@ function openPlaylistDetail(playlistId) {
         const pl = state.playlists.find(p => p.id === id);
         if (pl) { name = pl.name; songs = pl.songIds.map(sid => SONGS.find(s => s.id === sid)).filter(Boolean); art = ''; }
     }
+    return { songs, name, art };
+}
 
+function refreshPlaylistDetail() {
+    const playlistId = $('#view-playlist-detail')._playlistId;
+    if (!playlistId) return;
+    const { songs, name, art } = getPlaylistData(playlistId);
     $('#playlist-header').innerHTML = `
         ${art ? `<img src="${art}" alt="" class="playlist-header-art">` : ''}
         <div class="playlist-header-info">
@@ -521,6 +649,11 @@ function openPlaylistDetail(playlistId) {
     `;
     $('#playlist-songs').innerHTML = songs.map((s, i) => renderSongRow(s, i, { showNum: true })).join('');
     $('#view-playlist-detail')._songs = songs;
+}
+
+function openPlaylistDetail(playlistId) {
+    $('#view-playlist-detail')._playlistId = playlistId;
+    refreshPlaylistDetail();
     showView('playlist-detail');
 }
 
@@ -532,11 +665,17 @@ function renderPlayerFull() {
     if (!song) {
         if (emptyEl) emptyEl.style.display = '';
         if (contentEl) contentEl.style.display = 'none';
+        // Reset gradient for empty state
+        const scroll = $('.player-view-scroll');
+        if (scroll) scroll.style.background = `linear-gradient(180deg, rgba(255,215,0,0.12) 0%, var(--bg) 40%)`;
         return;
     }
 
     if (emptyEl) emptyEl.style.display = 'none';
     if (contentEl) contentEl.style.display = '';
+
+    // Apply current dynamic gradient
+    updatePlayerGradient(currentGradientColor);
 
     $('#player-art').src = imgPath(song.image);
     $('#player-title').textContent = song.title;
@@ -553,7 +692,8 @@ function renderPlayerFull() {
     $('#btn-repeat').classList.toggle('active', state.repeat !== 'off');
     $('#btn-repeat').innerHTML = state.repeat === 'one' ? icon('repeatOne') : icon('repeat');
 
-    $('#btn-play').innerHTML = state.playing ? icon('pause', 22) : icon('play', 22);
+    $('#btn-play').innerHTML = state.playing ? icon('pause', 26) : icon('play', 26);
+    $('#btn-play').classList.toggle('is-playing', state.playing);
     $('#btn-prev').innerHTML = icon('prev', 24);
     $('#btn-next').innerHTML = icon('next', 24);
 
@@ -689,7 +829,21 @@ function renderQueue() {
 
 function renderAll() {
     renderHome();
-    if (state.currentView === 'vault') renderVault();
+    renderVault(); // Always keep vault data fresh
+    renderSidebarPlaylists();
+    // Re-render current view-specific content
+    if (state.currentView === 'search') {
+        const q = $('#search-input').value.toLowerCase().trim();
+        if (q.length > 0) {
+            const results = SONGS.filter(s =>
+                s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
+            );
+            $('#search-results').innerHTML = results.map((s, i) => renderSongRow(s, i)).join('');
+        }
+    }
+    if (state.currentView === 'playlist-detail') {
+        refreshPlaylistDetail();
+    }
     updateUI();
 }
 
@@ -740,7 +894,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Song clicks (delegated)
     document.addEventListener('click', (e) => {
         const row = e.target.closest('.song-row');
-        if (row && !e.target.closest('.song-row-fav')) {
+        if (row && !e.target.closest('.song-row-fav') && !e.target.closest('.song-row-menu')) {
             const songId = parseInt(row.dataset.songId);
             const song = SONGS.find(s => s.id === songId);
             if (song) {
@@ -815,11 +969,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     $('#npb-open-player').addEventListener('click', () => showView('player'));
 
-    // Progress bar seeking
-    $('#player-progress-bar').addEventListener('click', (e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const pct = (e.clientX - rect.left) / rect.width;
+    // Progress bar seeking + drag (like iOS drag gesture with min distance 0)
+    const progressBar = $('#player-progress-bar');
+    let isDragging = false;
+
+    function seekFromEvent(e, bar) {
+        const rect = bar.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
         if (audio.duration) audio.currentTime = pct * audio.duration;
+        // Show thumb while dragging
+        $('#player-progress-thumb').style.opacity = '1';
+    }
+
+    progressBar.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        seekFromEvent(e, progressBar);
+    });
+    progressBar.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        seekFromEvent(e, progressBar);
+    }, { passive: true });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) seekFromEvent(e, progressBar);
+    });
+    document.addEventListener('touchmove', (e) => {
+        if (isDragging) seekFromEvent(e, progressBar);
+    }, { passive: true });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) { isDragging = false; $('#player-progress-thumb').style.opacity = ''; }
+    });
+    document.addEventListener('touchend', () => {
+        if (isDragging) { isDragging = false; $('#player-progress-thumb').style.opacity = ''; }
     });
 
     // Mix button
