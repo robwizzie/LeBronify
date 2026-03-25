@@ -22,6 +22,8 @@ const ICONS = {
     chevronRight: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
     musicNote: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>',
     ellipsis: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+    sparkles: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 5.6L10 7 8.6 4.5 10 2 7.5 3.4 5 2l1.4 2.5L5 7zm12 9.8L17 14l1.4 2.5L17 19l2.5-1.4L22 19l-1.4-2.5L22 14zM22 2l-2.5 1.4L17 2l1.4 2.5L17 7l2.5-1.4L22 7l-1.4-2.5zm-7.63 5.29a.996.996 0 00-1.41 0L1.29 18.96a.996.996 0 000 1.41l2.34 2.34c.39.39 1.02.39 1.41 0L16.7 11.05a.996.996 0 000-1.41l-2.33-2.35z"/></svg>',
+    trash: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
 };
 
 function icon(name, size) {
@@ -92,6 +94,15 @@ const AD_DATA = [
     { title: "AD APPROVED", img: "images/ui/ad_pose2.jpg", msg: "Anthony Davis says: 'These parodies hit harder than my blocks!'", dismiss: "Send AD to the Bench" },
     { title: "BROW DOWN", img: "images/ui/anthony_davis_default.jpg", msg: "The Brow demands you listen to at least 3 more songs!", dismiss: "AD Fouled Out - Skip" },
     { title: "AD BREAK", img: "images/ui/ad_pose1.jpg", msg: "This AD break is brought to you by Anthony Davis's eyebrow groomer.", dismiss: "Put AD on Injured Reserve" },
+    { title: "TRADE OFFER", img: "images/ui/ad_pose2.jpg", msg: "You receive: more parodies. AD receives: your undivided attention.", dismiss: "Decline Trade" },
+    { title: "THE UNIBROW SPEAKS", img: "images/ui/anthony_davis_default.jpg", msg: "AD's eyebrow has its own gravitational pull. And opinions.", dismiss: "Wax the Brow" },
+    { title: "STREET CLOTHES ALERT", img: "images/ui/ad_pose1.jpg", msg: "AD is sitting courtside in a designer suit again. Classic.", dismiss: "Get AD a Jersey" },
+    { title: "GLASS MAN GLAZING", img: "images/ui/ad_pose2.jpg", msg: "Anthony Davis is OUT tonight with a sore playlist finger.", dismiss: "Day-to-Day" },
+];
+
+const TACO_ADS = [
+    { title: "TACO TUESDAYYYYY", img: "images/ui/lebron_default.png", msg: "It's Taco Tuesday! LeBron demands you eat tacos while listening!", dismiss: "Pass the Hot Sauce" },
+    { title: "TACO TIME", img: "images/ui/lebron_default.png", msg: "LeBron's kitchen is open. Tacos are mandatory on Tuesdays.", dismiss: "Order More Tacos" },
 ];
 
 // -------------------------------------------
@@ -154,6 +165,10 @@ function shuffleArray(arr) {
     return a;
 }
 function getSongOfDay() {
+    // 60% chance on Tuesdays to feature Taco Tuesday song
+    if (isTacoTuesday() && Math.random() < 0.6) {
+        return SONGS.find(s => s.id === 43) || SONGS[0];
+    }
     const day = Math.floor(Date.now() / 86400000);
     return SONGS[day % SONGS.length];
 }
@@ -268,6 +283,51 @@ function toggleFavorite(songId) {
     renderAll();
 }
 
+function playRandomMix() {
+    // Generate a diverse queue: one song per artist, up to 10 songs
+    const artistMap = {};
+    const shuffled = shuffleArray([...SONGS]);
+    const mix = [];
+    for (const song of shuffled) {
+        if (!artistMap[song.artist] && mix.length < 10) {
+            mix.push(song);
+            artistMap[song.artist] = true;
+        }
+    }
+    if (mix.length === 0) return;
+    state.originalOrder = [...mix];
+    state.queue = [...mix];
+    state.queueIndex = 0;
+    state.shuffle = false;
+    playSong(state.queue[0], true);
+}
+
+function addToQueue(song) {
+    state.queue.push(song);
+    if (state.queue.length === 1) {
+        state.queueIndex = 0;
+        playSong(song, true);
+    }
+    renderQueue();
+}
+
+function playNext(song) {
+    state.queue.splice(state.queueIndex + 1, 0, song);
+    renderQueue();
+}
+
+function clearQueue() {
+    const current = state.queue[state.queueIndex];
+    if (current) {
+        state.queue = [current];
+        state.queueIndex = 0;
+    } else {
+        state.queue = [];
+        state.queueIndex = -1;
+    }
+    renderQueue();
+}
+
 audio.addEventListener('ended', nextSong);
 audio.addEventListener('timeupdate', updateProgress);
 
@@ -276,12 +336,22 @@ audio.addEventListener('timeupdate', updateProgress);
 // -------------------------------------------
 function maybeShowAd() {
     if (state.songsPlayed > 0 && state.songsPlayed % 4 === 0) {
-        const ad = AD_DATA[Math.floor(Math.random() * AD_DATA.length)];
+        let adPool = AD_DATA;
+        // 40% chance on Tuesdays to show taco ad instead
+        if (isTacoTuesday() && Math.random() < 0.4) {
+            adPool = TACO_ADS;
+        }
+        const ad = adPool[Math.floor(Math.random() * adPool.length)];
         $('#ad-header').textContent = ad.title;
         $('#ad-img').src = ad.img;
         $('#ad-msg').textContent = ad.msg;
         $('#ad-dismiss').textContent = ad.dismiss;
         $('#ad-overlay').style.display = 'flex';
+        // Auto dismiss after 8 seconds
+        if (state._adTimeout) clearTimeout(state._adTimeout);
+        state._adTimeout = setTimeout(() => {
+            $('#ad-overlay').style.display = 'none';
+        }, 8000);
     }
 }
 
@@ -323,6 +393,7 @@ function renderSongRow(song, index, options = {}) {
             </div>
             ${d.playCount > 0 ? `<span class="song-row-plays">${d.playCount} plays</span>` : ''}
             <button class="song-row-fav ${d.isFavorite ? 'active' : ''}" data-fav-id="${song.id}">${d.isFavorite ? icon('starFilled', 16) : icon('starEmpty', 16)}</button>
+            <button class="song-row-menu" data-menu-id="${song.id}">${icon('ellipsis', 14)}</button>
         </div>
     `;
 }
@@ -455,7 +526,17 @@ function openPlaylistDetail(playlistId) {
 
 function renderPlayerFull() {
     const song = state.queue[state.queueIndex];
-    if (!song) return;
+    const emptyEl = $('#player-empty');
+    const contentEl = $('#player-content');
+
+    if (!song) {
+        if (emptyEl) emptyEl.style.display = '';
+        if (contentEl) contentEl.style.display = 'none';
+        return;
+    }
+
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (contentEl) contentEl.style.display = '';
 
     $('#player-art').src = imgPath(song.image);
     $('#player-title').textContent = song.title;
@@ -498,7 +579,8 @@ function updateProgress() {
     $('#player-progress-thumb').style.left = pct + '%';
     $('#npb-progress-fill').style.width = pct + '%';
     $('#player-time-current').textContent = formatTime(audio.currentTime);
-    $('#player-time-total').textContent = formatTime(audio.duration);
+    const remaining = audio.duration ? audio.duration - audio.currentTime : 0;
+    $('#player-time-total').textContent = remaining > 0 ? '-' + formatTime(remaining) : '0:00';
 }
 
 function updateUI() {
@@ -528,6 +610,8 @@ function updateUI() {
 
     if (state.currentView === 'player') renderPlayerFull();
     if (song) updateMediaSession(song);
+    // Update queue if panel is open
+    if ($('#queue-panel').classList.contains('open')) renderQueue();
 }
 
 function updateMediaSession(song) {
@@ -546,15 +630,61 @@ function updateMediaSession(song) {
 }
 
 function renderQueue() {
-    $('#queue-list').innerHTML = state.queue.map((s, i) => `
-        <div class="queue-item ${i === state.queueIndex ? 'active' : ''}" data-queue-index="${i}">
-            <img src="${imgPath(s.image)}" alt="" class="queue-art">
-            <div class="queue-info">
-                <div class="queue-name">${s.title}</div>
-                <div class="queue-artist">${s.artist}</div>
+    const current = state.queue[state.queueIndex];
+    const courtEl = $('#queue-court');
+
+    // On The Court (now playing)
+    if (current) {
+        courtEl.innerHTML = `
+            <div class="queue-court-label">ON THE COURT</div>
+            <div class="queue-court-content">
+                <img src="${imgPath(current.image)}" alt="" class="queue-court-art">
+                <div class="queue-court-info">
+                    <div class="queue-court-title">${current.title}</div>
+                    <div class="queue-court-artist">${current.artist}</div>
+                </div>
+                <div class="queue-court-controls">
+                    <button class="queue-court-btn" id="queue-prev-btn">${icon('prev', 18)}</button>
+                    <button class="queue-court-play" id="queue-play-btn">${state.playing ? icon('pause', 16) : icon('play', 16)}</button>
+                    <button class="queue-court-btn" id="queue-next-btn">${icon('next', 18)}</button>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    } else {
+        courtEl.innerHTML = '';
+    }
+
+    // On The Bench (upcoming songs)
+    const bench = state.queue.slice(state.queueIndex + 1);
+    $('#queue-bench-count').textContent = bench.length;
+
+    if (bench.length > 0) {
+        $('#queue-list').innerHTML = bench.map((s, i) => `
+            <div class="queue-item" data-queue-index="${state.queueIndex + 1 + i}">
+                <span class="queue-item-num">${i + 1}</span>
+                <img src="${imgPath(s.image)}" alt="" class="queue-art">
+                <div class="queue-info">
+                    <div class="queue-name">${s.title}</div>
+                    <div class="queue-artist">${s.artist}</div>
+                </div>
+                <button class="queue-item-play">${icon('play', 14)}</button>
+            </div>
+        `).join('');
+    } else {
+        $('#queue-list').innerHTML = `
+            <div class="queue-empty">
+                <div class="queue-empty-icon">${icon('musicNote', 48)}</div>
+                <div class="queue-empty-title">The King's queue is empty</div>
+                <div class="queue-empty-text">Add songs to keep the vibes going</div>
+            </div>
+        `;
+    }
+
+    // Update bottom controls state
+    const shuffleBtn = $('#queue-shuffle');
+    const repeatBtn = $('#queue-repeat');
+    if (shuffleBtn) shuffleBtn.classList.toggle('active', state.shuffle);
+    if (repeatBtn) repeatBtn.classList.toggle('active', state.repeat !== 'off');
 }
 
 function renderAll() {
@@ -578,6 +708,9 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#btn-next').innerHTML = icon('next', 24);
     $('#btn-repeat').innerHTML = icon('repeat');
     $('#btn-favorite .action-icon').innerHTML = icon('starEmpty', 20);
+
+    // Initialize player empty state
+    renderPlayerFull();
 
     // Volume
     const vol = $('#volume-slider');
@@ -654,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const queueItem = e.target.closest('.queue-item');
-        if (queueItem) {
+        if (queueItem && !e.target.closest('.queue-item-play')) {
             state.queueIndex = parseInt(queueItem.dataset.queueIndex);
             playSong(state.queue[state.queueIndex], true);
             renderQueue();
@@ -689,6 +822,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audio.duration) audio.currentTime = pct * audio.duration;
     });
 
+    // Mix button
+    $('#btn-mix').addEventListener('click', playRandomMix);
+
     // Queue panel
     $('#btn-queue').addEventListener('click', () => {
         renderQueue();
@@ -696,6 +832,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     $('#queue-close').addEventListener('click', () => {
         $('#queue-panel').classList.remove('open');
+    });
+
+    // Queue bottom controls
+    $('#queue-clear').addEventListener('click', () => { clearQueue(); renderQueue(); });
+    $('#queue-shuffle').addEventListener('click', () => { toggleShuffle(); renderQueue(); });
+    $('#queue-repeat').addEventListener('click', () => { toggleRepeat(); renderQueue(); });
+    $('#queue-mix').addEventListener('click', () => {
+        playRandomMix();
+        renderQueue();
+    });
+
+    // Queue court controls (delegated since they re-render)
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#queue-play-btn')) togglePlay();
+        if (e.target.closest('#queue-prev-btn')) { prevSong(); renderQueue(); }
+        if (e.target.closest('#queue-next-btn')) { nextSong(); renderQueue(); }
+        if (e.target.closest('.queue-item-play')) {
+            const item = e.target.closest('.queue-item');
+            if (item) {
+                state.queueIndex = parseInt(item.dataset.queueIndex);
+                playSong(state.queue[state.queueIndex], true);
+                renderQueue();
+            }
+        }
+    });
+
+    // Player empty state play button
+    $('#player-empty-play').addEventListener('click', () => {
+        playQueue([...SONGS], Math.floor(Math.random() * SONGS.length));
     });
 
     // Back buttons
@@ -771,11 +936,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (item) {
             const plId = parseInt(item.dataset.addPlId);
             const pl = state.playlists.find(p => p.id === plId);
-            const song = state.queue[state.queueIndex];
+            // Support both player action and context menu adds
+            const song = state._contextSong || state.queue[state.queueIndex];
             if (pl && song && !pl.songIds.includes(song.id)) {
                 pl.songIds.push(song.id);
                 saveState();
             }
+            state._contextSong = null;
             $('#modal-add-to-playlist').style.display = 'none';
             renderVault();
             renderSidebarPlaylists();
@@ -783,7 +950,68 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // AD dismiss
-    $('#ad-dismiss').addEventListener('click', () => { $('#ad-overlay').style.display = 'none'; });
+    $('#ad-dismiss').addEventListener('click', () => {
+        $('#ad-overlay').style.display = 'none';
+        if (state._adTimeout) clearTimeout(state._adTimeout);
+    });
+
+    // Context menu for songs
+    let contextMenuEl = null;
+    function showContextMenu(songId, x, y) {
+        closeContextMenu();
+        const song = SONGS.find(s => s.id === songId);
+        if (!song) return;
+        const d = getSongData(songId);
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.innerHTML = `
+            <div class="context-menu-item" data-action="play" data-id="${songId}">${icon('play', 14)} Play Now</div>
+            <div class="context-menu-item" data-action="playnext" data-id="${songId}">${icon('next', 14)} Up Next</div>
+            <div class="context-menu-item" data-action="addqueue" data-id="${songId}">${icon('musicNote', 14)} Add to Queue</div>
+            <div class="context-menu-item" data-action="addplaylist" data-id="${songId}">${icon('starEmpty', 14)} Add to Playbook</div>
+            <div class="context-menu-item" data-action="fav" data-id="${songId}">${d.isFavorite ? icon('starFilled', 14) + ' Remove from All-Stars' : icon('starEmpty', 14) + ' Add to All-Stars'}</div>
+        `;
+        // Position
+        menu.style.left = Math.min(x, window.innerWidth - 200) + 'px';
+        menu.style.top = Math.min(y, window.innerHeight - 220) + 'px';
+        document.body.appendChild(menu);
+        contextMenuEl = menu;
+
+        menu.addEventListener('click', (e) => {
+            const item = e.target.closest('.context-menu-item');
+            if (!item) return;
+            const action = item.dataset.action;
+            const id = parseInt(item.dataset.id);
+            const s = SONGS.find(s => s.id === id);
+            if (action === 'play' && s) playSong(s);
+            if (action === 'playnext' && s) playNext(s);
+            if (action === 'addqueue' && s) addToQueue(s);
+            if (action === 'fav') toggleFavorite(id);
+            if (action === 'addplaylist' && s) {
+                state._contextSong = s;
+                const modal = $('#modal-add-to-playlist');
+                $('#modal-playlist-list').innerHTML = state.playlists.map(p =>
+                    `<div class="modal-pl-item" data-add-pl-id="${p.id}">${p.name}</div>`
+                ).join('') || '<p style="color:var(--t3);padding:12px;">No playbooks yet. Create one first!</p>';
+                modal.style.display = 'flex';
+            }
+            closeContextMenu();
+        });
+    }
+    function closeContextMenu() {
+        if (contextMenuEl) { contextMenuEl.remove(); contextMenuEl = null; }
+    }
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.context-menu')) closeContextMenu();
+    });
+    document.addEventListener('click', (e) => {
+        const menuBtn = e.target.closest('.song-row-menu');
+        if (menuBtn) {
+            e.stopPropagation();
+            const rect = menuBtn.getBoundingClientRect();
+            showContextMenu(parseInt(menuBtn.dataset.menuId), rect.right, rect.bottom);
+        }
+    });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
