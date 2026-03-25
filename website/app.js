@@ -279,36 +279,42 @@ function triggerChalkToss() {
     chalkContainer = document.createElement('div');
     chalkContainer.className = 'chalk-toss-overlay';
 
-    // Clap hands that come together
+    // Two single hands that clap together at center
     const leftHand = document.createElement('div');
     leftHand.className = 'chalk-hand chalk-hand-left';
-    leftHand.textContent = '🤲';
+    leftHand.textContent = '🖐️';
     const rightHand = document.createElement('div');
     rightHand.className = 'chalk-hand chalk-hand-right';
-    rightHand.textContent = '🤲';
+    rightHand.textContent = '🖐️';
     chalkContainer.appendChild(leftHand);
     chalkContainer.appendChild(rightHand);
+
+    // Fade hands out after clap connects
+    setTimeout(() => {
+        leftHand.classList.add('fade-out');
+        rightHand.classList.add('fade-out');
+    }, 500);
 
     // Flash on clap impact
     const flash = document.createElement('div');
     flash.className = 'chalk-flash';
     chalkContainer.appendChild(flash);
 
-    // Burst particles from center (after clap)
-    for (let i = 0; i < 30; i++) {
+    // Burst particles from screen center in all directions
+    for (let i = 0; i < 35; i++) {
         const dot = document.createElement('div');
         dot.className = 'chalk-dot';
         const size = 2 + Math.random() * 6;
-        // Burst outward from center in all upward directions
-        const angle = -Math.PI * (0.1 + Math.random() * 0.8); // upward arc
-        const distance = 100 + Math.random() * 250;
-        const dx = Math.cos(angle) * distance * (Math.random() > 0.5 ? 1 : -1);
-        const dy = -80 - Math.random() * 280; // always upward
-        const dur = 1.2 + Math.random() * 1.0;
-        const burstDelay = 0.42 + Math.random() * 0.15; // slight stagger after clap
+        // Radial burst from center in all directions
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 80 + Math.random() * 300;
+        const dx = Math.cos(angle) * distance;
+        const dy = Math.sin(angle) * distance;
+        const dur = 1.0 + Math.random() * 1.2;
+        const burstDelay = 0.40 + Math.random() * 0.15;
         dot.style.cssText = `
             width: ${size}px; height: ${size}px;
-            left: 50%; bottom: 38%;
+            left: 50%; top: 50%;
             --dx: ${dx}px; --dy: ${dy}px;
             --dur: ${dur}s; --burst-delay: ${burstDelay}s;
         `;
