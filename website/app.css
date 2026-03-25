@@ -96,7 +96,7 @@ svg { flex-shrink: 0; }
     position: relative; height: 240px; border-radius: 16px; overflow: hidden;
     margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
-.banner-img { width: 100%; height: 100%; object-fit: cover; }
+.banner-img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
 .banner-overlay {
     position: absolute; bottom: 0; left: 0; right: 0;
     padding: 28px; background: linear-gradient(transparent, rgba(0,0,0,0.9));
@@ -330,7 +330,9 @@ svg { flex-shrink: 0; }
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     transition: var(--transition);
 }
-.ctrl-play:hover { transform: scale(1.06); }
+/* Keep play/pause button black on hover - white icon blends with white bg */
+.ctrl-play:hover { transform: scale(1.06); color: #000; }
+.ctrl-play:active { transform: scale(0.96); }
 /* Play icon offset like iOS (+2px right) */
 .ctrl-play svg { margin-left: 2px; }
 .ctrl-play.is-playing svg { margin-left: 0; }
@@ -400,6 +402,8 @@ svg { flex-shrink: 0; }
 .queue-court-btn { color: var(--t2); padding: 4px; display: flex; align-items: center; transition: var(--transition); }
 .queue-court-btn:hover { color: var(--t1); }
 .queue-court-play { width: 34px; height: 34px; background: var(--white); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.queue-court-play:hover { color: #000; transform: scale(1.08); }
+.queue-court-play:active { transform: scale(0.94); }
 
 /* On The Bench header */
 .queue-bench-header {
@@ -466,6 +470,8 @@ svg { flex-shrink: 0; }
     width: 36px; height: 36px; background: var(--white); color: #000;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
 }
+.npb-play:hover { color: #000; transform: scale(1.08); }
+.npb-play:active { transform: scale(0.94); }
 .npb-fav { display: flex; align-items: center; }
 .npb-fav.active { color: var(--yellow); }
 .npb-right { display: flex; align-items: center; gap: 12px; flex: 1; justify-content: flex-end; }

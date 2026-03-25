@@ -482,9 +482,15 @@ function showView(name) {
     if (view) view.classList.add('active');
     $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === name));
     $$('.mobile-tab').forEach(n => n.classList.toggle('active', n.dataset.view === name));
+    // Always re-render the target view with fresh data
+    if (name === 'home') renderHome();
     if (name === 'vault') renderVault();
     if (name === 'search') $('#search-input').focus();
     if (name === 'player') renderPlayerFull();
+    if (name === 'playlist-detail') {
+        refreshPlaylistDetail();
+    }
+    updateUI();
 }
 
 // -------------------------------------------
@@ -614,7 +620,7 @@ function renderSidebarPlaylists() {
     el.innerHTML = items.map(p => `<button class="sidebar-pl-item" data-playlist-id="${p.id}">${p.name}</button>`).join('');
 }
 
-function openPlaylistDetail(playlistId) {
+function getPlaylistData(playlistId) {
     let songs = [];
     let name = '';
     let art = '';
@@ -627,7 +633,13 @@ function openPlaylistDetail(playlistId) {
         const pl = state.playlists.find(p => p.id === id);
         if (pl) { name = pl.name; songs = pl.songIds.map(sid => SONGS.find(s => s.id === sid)).filter(Boolean); art = ''; }
     }
+    return { songs, name, art };
+}
 
+function refreshPlaylistDetail() {
+    const playlistId = $('#view-playlist-detail')._playlistId;
+    if (!playlistId) return;
+    const { songs, name, art } = getPlaylistData(playlistId);
     $('#playlist-header').innerHTML = `
         ${art ? `<img src="${art}" alt="" class="playlist-header-art">` : ''}
         <div class="playlist-header-info">
@@ -637,6 +649,11 @@ function openPlaylistDetail(playlistId) {
     `;
     $('#playlist-songs').innerHTML = songs.map((s, i) => renderSongRow(s, i, { showNum: true })).join('');
     $('#view-playlist-detail')._songs = songs;
+}
+
+function openPlaylistDetail(playlistId) {
+    $('#view-playlist-detail')._playlistId = playlistId;
+    refreshPlaylistDetail();
     showView('playlist-detail');
 }
 
@@ -812,7 +829,21 @@ function renderQueue() {
 
 function renderAll() {
     renderHome();
-    if (state.currentView === 'vault') renderVault();
+    renderVault(); // Always keep vault data fresh
+    renderSidebarPlaylists();
+    // Re-render current view-specific content
+    if (state.currentView === 'search') {
+        const q = $('#search-input').value.toLowerCase().trim();
+        if (q.length > 0) {
+            const results = SONGS.filter(s =>
+                s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
+            );
+            $('#search-results').innerHTML = results.map((s, i) => renderSongRow(s, i)).join('');
+        }
+    }
+    if (state.currentView === 'playlist-detail') {
+        refreshPlaylistDetail();
+    }
     updateUI();
 }
 
