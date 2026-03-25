@@ -554,47 +554,55 @@ svg { flex-shrink: 0; }
     position: fixed; inset: 0; pointer-events: none; z-index: 500;
     overflow: hidden;
 }
-/* Clap hands */
+/* Clap hands - two single hands meeting at center */
 .chalk-hand {
-    position: absolute; bottom: 38%; font-size: 36px;
-    opacity: 0; z-index: 2; filter: grayscale(1) brightness(2);
+    position: absolute; top: 50%; font-size: 42px; line-height: 1;
+    opacity: 0; z-index: 2;
 }
 .chalk-hand-left {
-    left: calc(50% - 60px);
-    animation: clapLeft 0.5s ease-in forwards;
+    left: 50%; transform: translate(-50%, -50%) translateX(-60px) scaleX(-1);
+    animation: clapLeft 0.45s ease-in forwards;
 }
 .chalk-hand-right {
-    left: calc(50% + 20px);
-    animation: clapRight 0.5s ease-in forwards;
+    left: 50%; transform: translate(-50%, -50%) translateX(60px);
+    animation: clapRight 0.45s ease-in forwards;
 }
 @keyframes clapLeft {
-    0% { transform: translateX(-40px) rotate(-15deg); opacity: 0; }
-    40% { opacity: 1; }
-    100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+    0% { transform: translate(-50%, -50%) translateX(-60px) scaleX(-1); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) translateX(-8px) scaleX(-1); opacity: 1; }
 }
 @keyframes clapRight {
-    0% { transform: translateX(40px) rotate(15deg); opacity: 0; }
-    40% { opacity: 1; }
-    100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+    0% { transform: translate(-50%, -50%) translateX(60px); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) translateX(8px); opacity: 1; }
+}
+/* Hands fade out after clap */
+.chalk-hand.fade-out {
+    animation: handFade 0.4s ease-out forwards;
+}
+@keyframes handFade {
+    0% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) translateX(0) scale(0.8); }
 }
 /* Flash on clap impact */
 .chalk-flash {
-    position: absolute; bottom: 35%; left: 50%; transform: translate(-50%, 50%);
-    width: 120px; height: 120px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,255,0.7), transparent 70%);
-    opacity: 0; animation: clapFlash 0.6s ease-out 0.45s forwards;
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 140px; height: 140px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.8), transparent 70%);
+    opacity: 0; animation: clapFlash 0.6s ease-out 0.42s forwards;
 }
 @keyframes clapFlash {
-    0% { opacity: 0; transform: translate(-50%, 50%) scale(0.3); }
-    20% { opacity: 1; transform: translate(-50%, 50%) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, 50%) scale(2); }
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+    25% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
 }
 /* Burst particles (after clap) */
 .chalk-dot {
     position: absolute; border-radius: 50%;
     background: rgba(255, 255, 255, 0.85);
     opacity: 0;
-    animation: chalkBurst var(--dur, 1.8s) ease-out var(--burst-delay, 0.45s) forwards;
+    animation: chalkBurst var(--dur, 1.8s) ease-out var(--burst-delay, 0.42s) forwards;
 }
 @keyframes chalkBurst {
     0% { transform: translate(0, 0) scale(1); opacity: 0; }
