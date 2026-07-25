@@ -36,15 +36,9 @@ struct RandomPresetQueueButton: View {
             VStack(spacing: 8) {
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color.blue, Color.purple]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(Theme.brandGradient)
                         .frame(width: 70, height: 70)
-                        .shadow(color: Color.black.opacity(0.2), radius: 4)
+                        .shadow(color: Theme.royal.opacity(0.4), radius: 6)
                     
                     Image(systemName: "shuffle.circle.fill")
                         .resizable()

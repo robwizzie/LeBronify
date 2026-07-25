@@ -28,19 +28,25 @@ struct PlayerView: View {
     @State private var activeSheet: PlayerSheetType?
     @State private var isDraggingSlider = false
     @State private var dragPosition: Double? = nil
-    @State private var dominantColor: Color = .yellow
+    @State private var dominantColor: Color = Theme.royal
+    @State private var artSwipeOffset: CGFloat = 0
 
-    // LeBronify dark palette
-    private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
-    private let accentYellow = Color.yellow
+    private let bgColor = Theme.background
+    private let accentColor = Theme.accentText
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Dynamic gradient background based on album art color
+                // Dynamic gradient background based on album art color.
+                // The brand blue is layered underneath so every track still
+                // reads as Sixers no matter what the artwork looks like.
                 if viewModel.currentSong != nil {
                     LinearGradient(
-                        colors: [dominantColor.opacity(0.45), bgColor],
+                        colors: [
+                            dominantColor.opacity(0.5),
+                            Theme.royal.opacity(0.22),
+                            bgColor
+                        ],
                         startPoint: .top,
                         endPoint: .center
                     )
@@ -92,13 +98,42 @@ struct PlayerView: View {
 
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 0) {
-                // Large album art - Spotify style
+                // Large album art. Swipe left/right to move through the queue —
+                // faster than reaching for the small skip buttons.
                 Image(song.albumArt)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: artSize, height: artSize)
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous))
+                    .shadow(color: .black.opacity(0.55), radius: 24, y: 12)
+                    .scaleEffect(viewModel.isPlaying ? 1.0 : 0.94)
+                    .offset(x: artSwipeOffset)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.7), value: viewModel.isPlaying)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.75), value: artSwipeOffset)
+                    // Simultaneous (not exclusive) so the enclosing ScrollView can
+                    // still scroll vertically when the drag starts on the artwork.
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 20)
+                            .onChanged { value in
+                                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                                artSwipeOffset = value.translation.width * 0.35
+                            }
+                            .onEnded { value in
+                                defer { artSwipeOffset = 0 }
+
+                                let horizontal = value.translation.width
+                                guard abs(horizontal) > abs(value.translation.height) else { return }
+
+                                let threshold: CGFloat = 60
+                                if horizontal < -threshold {
+                                    viewModel.nextSong()
+                                    Haptics.medium()
+                                } else if horizontal > threshold {
+                                    viewModel.previousSong()
+                                    Haptics.medium()
+                                }
+                            }
+                    )
                     .padding(.top, 16)
 
                 Spacer().frame(height: 28)
@@ -107,12 +142,12 @@ struct PlayerView: View {
                 VStack(spacing: 4) {
                     Text(song.title)
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.textPrimary)
                         .lineLimit(1)
 
                     Text(song.artist)
                         .font(.system(size: 16))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(Theme.textSecondary)
                         .lineLimit(1)
                 }
                 .padding(.horizontal, 24)
@@ -162,7 +197,7 @@ struct PlayerView: View {
 
                     // Filled portion
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.white)
+                        .fill(Theme.brandGradient)
                         .frame(width: max(0, min(sliderGeometry.size.width * progress, sliderGeometry.size.width)), height: 4)
 
                     // Thumb - visible on drag
@@ -187,6 +222,7 @@ struct PlayerView: View {
                             viewModel.seek(to: seekTime)
                             dragPosition = nil
                             isDraggingSlider = false
+                            Haptics.light()
                         }
                 )
             }
@@ -213,45 +249,62 @@ struct PlayerView: View {
 
     private var playbackControls: some View {
         HStack(spacing: 0) {
-            Button { viewModel.toggleShuffle() } label: {
+            Button {
+                viewModel.toggleShuffle()
+                Haptics.selection()
+            } label: {
                 Image(systemName: "shuffle")
                     .font(.system(size: 18))
-                    .foregroundColor(viewModel.queueManager.shuffleEnabled ? accentYellow : .white.opacity(0.6))
+                    .foregroundColor(viewModel.queueManager.shuffleEnabled ? accentColor : Theme.textSecondary)
             }
             .frame(maxWidth: .infinity)
 
-            Button { viewModel.previousSong() } label: {
+            Button {
+                viewModel.previousSong()
+                Haptics.light()
+            } label: {
                 Image(systemName: "backward.fill")
                     .font(.system(size: 28))
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.textPrimary)
             }
             .frame(maxWidth: .infinity)
 
-            Button { viewModel.togglePlayPause() } label: {
+            Button {
+                viewModel.togglePlayPause()
+                Haptics.medium()
+            } label: {
                 ZStack {
                     Circle()
-                        .fill(Color.white)
-                        .frame(width: 64, height: 64)
+                        .fill(Theme.brandGradient)
+                        .frame(width: 68, height: 68)
+                        .shadow(color: Theme.royal.opacity(0.5), radius: 14, y: 4)
 
                     Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 26))
-                        .foregroundColor(.black)
+                        .font(.system(size: 28))
+                        .foregroundColor(.white)
                         .offset(x: viewModel.isPlaying ? 0 : 2)
                 }
             }
+            .pressable(scale: 0.92)
             .frame(maxWidth: .infinity)
 
-            Button { viewModel.nextSong() } label: {
+            Button {
+                viewModel.nextSong()
+                Haptics.light()
+            } label: {
                 Image(systemName: "forward.fill")
                     .font(.system(size: 28))
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.textPrimary)
             }
             .frame(maxWidth: .infinity)
 
-            Button { viewModel.cycleRepeatMode() } label: {
+            Button {
+                viewModel.cycleRepeatMode()
+                Haptics.selection()
+            } label: {
                 Image(systemName: repeatIcon)
                     .font(.system(size: 18))
-                    .foregroundColor(viewModel.queueManager.repeatMode == .off ? .white.opacity(0.6) : accentYellow)
+                    .foregroundColor(viewModel.queueManager.repeatMode == .off ? Theme.textSecondary : accentColor)
             }
             .frame(maxWidth: .infinity)
         }
@@ -266,28 +319,33 @@ struct PlayerView: View {
             actionButton(
                 icon: song.isFavorite ? "star.fill" : "star",
                 label: "All-Star",
-                color: song.isFavorite ? .yellow : .white.opacity(0.5)
+                color: song.isFavorite ? Theme.liberty : Theme.textSecondary
             ) {
                 viewModel.toggleFavorite(for: song.id)
                 if let updated = viewModel.allSongs.first(where: { $0.id == song.id }) {
                     viewModel.currentSong = updated
                 }
+                Haptics.success()
             }
 
-            actionButton(icon: "list.bullet", label: "Queue", color: .white.opacity(0.5)) {
+            actionButton(icon: "list.bullet", label: "Queue", color: Theme.textSecondary) {
                 activeSheet = .queue
+                Haptics.light()
             }
 
-            actionButton(icon: "plus.circle", label: "Playbook", color: .white.opacity(0.5)) {
+            actionButton(icon: "plus.circle", label: "Playbook", color: Theme.textSecondary) {
                 activeSheet = .addToPlaylist
+                Haptics.light()
             }
 
-            actionButton(icon: "sparkles", label: "Mix", color: .white.opacity(0.5)) {
+            actionButton(icon: "sparkles", label: "Mix", color: Theme.textSecondary) {
                 viewModel.playRandomPresetQueue()
+                Haptics.medium()
             }
 
-            actionButton(icon: "trash", label: "Clear", color: .white.opacity(0.5)) {
+            actionButton(icon: "trash", label: "Clear", color: Theme.textSecondary) {
                 viewModel.clearQueue()
+                Haptics.warning()
             }
         }
         .padding(.horizontal, 16)
@@ -304,10 +362,11 @@ struct PlayerView: View {
 
                 Text(label)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.white.opacity(0.4))
+                    .foregroundColor(Theme.textTertiary)
             }
             .frame(maxWidth: .infinity)
         }
+        .pressable(scale: 0.9)
     }
 
     // MARK: - Queue Preview (compact)
@@ -321,18 +380,18 @@ struct PlayerView: View {
         if !upNext.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("On The Bench")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white.opacity(0.7))
+                    Text("ON THE BENCH")
+                        .eyebrowStyle()
 
                     Spacer()
 
                     Button {
                         activeSheet = .queue
+                        Haptics.light()
                     } label: {
                         Text("See All")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.4))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(Theme.accentText)
                     }
                 }
 
@@ -361,13 +420,14 @@ struct PlayerView: View {
                     .contentShape(Rectangle())
                     .onTapGesture {
                         viewModel.playSong(song)
+                        Haptics.light()
                     }
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.vertical, 10)
-            .background(Color.white.opacity(0.04))
-            .cornerRadius(10)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .surfaceCard()
             .padding(.horizontal, 16)
         }
     }
@@ -383,39 +443,37 @@ struct PlayerView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 180, height: 180)
-                .cornerRadius(90)
-                .shadow(color: .yellow.opacity(0.3), radius: 20)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Theme.royal.opacity(0.6), lineWidth: 3))
+                .shadow(color: Theme.royal.opacity(0.45), radius: 24)
 
             Text("LEBRONIFY")
-                .font(.system(size: 28, weight: .black, design: .rounded))
-                .foregroundColor(.yellow)
+                .font(Theme.display(28))
+                .foregroundColor(Theme.textPrimary)
 
             Text("The King's Parody Collection")
                 .font(.system(size: 15))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(Theme.textSecondary)
 
             Text("\"I'm not playing right now,\nbut I'm always ready.\"")
                 .font(.system(size: 13, weight: .medium, design: .serif))
-                .foregroundColor(.yellow.opacity(0.5))
+                .foregroundColor(Theme.accentText.opacity(0.7))
                 .multilineTextAlignment(.center)
                 .italic()
 
             Button {
                 if let song = viewModel.allSongs.randomElement() {
                     viewModel.playSong(song)
+                    Haptics.medium()
                 }
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "play.fill")
                     Text("Let The King Play")
                 }
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.black)
-                .padding(.horizontal, 32)
-                .padding(.vertical, 14)
-                .background(accentYellow)
-                .cornerRadius(25)
             }
+            .buttonStyle(PrimaryActionButtonStyle())
+            .padding(.horizontal, 48)
 
             Spacer()
         }
@@ -440,7 +498,7 @@ struct PlayerView: View {
     private func updateDominantColor() {
         guard let song = viewModel.currentSong,
               let uiImage = UIImage(named: song.albumArt) else {
-            dominantColor = .yellow
+            dominantColor = Theme.royal
             return
         }
 
@@ -457,13 +515,13 @@ struct PlayerView: View {
             space: colorSpace,
             bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
         ) else {
-            dominantColor = .yellow
+            dominantColor = Theme.royal
             return
         }
         context.draw(uiImage.cgImage!, in: CGRect(x: 0, y: 0, width: w, height: h))
 
         guard let ptr = context.data?.assumingMemoryBound(to: UInt8.self) else {
-            dominantColor = .yellow
+            dominantColor = Theme.royal
             return
         }
 
@@ -505,7 +563,7 @@ struct PlayerView: View {
         guard let (bestKey, bestCount) = colorCounts.max(by: { $0.value < $1.value }),
               bestCount > 0,
               let totals = colorTotals[bestKey] else {
-            withAnimation(.easeInOut(duration: 0.6)) { dominantColor = .yellow }
+            withAnimation(.easeInOut(duration: 0.6)) { dominantColor = Theme.royal }
             return
         }
 

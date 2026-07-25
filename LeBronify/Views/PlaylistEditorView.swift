@@ -38,7 +38,7 @@ struct PlaylistEditorView: View {
     ]
     
     // Colors for the UI
-    private let gradientColors = [Color.purple.opacity(0.7), Color.blue.opacity(0.5)]
+    private let gradientColors = [Theme.navy, Theme.background]
     
     init(playlist: Playlist? = nil) {
         self.existingPlaylist = playlist
@@ -119,7 +119,7 @@ struct PlaylistEditorView: View {
                                     }
                                     .frame(minWidth: 0, maxWidth: .infinity)
                                     .padding()
-                                    .background(Color.blue)
+                                    .background(Theme.brandGradient)
                                     .foregroundColor(.white)
                                     .cornerRadius(8)
                                 }
@@ -131,7 +131,7 @@ struct PlaylistEditorView: View {
                                         Image(systemName: imageName)
                                             .font(.system(size: 32))
                                             .frame(width: 60, height: 60)
-                                            .background(selectedSystemImage == imageName ? Color.blue.opacity(0.3) : Color.clear)
+                                            .background(selectedSystemImage == imageName ? Theme.royal.opacity(0.45) : Color.clear)
                                             .cornerRadius(8)
                                             .onTapGesture {
                                                 selectedSystemImage = imageName
@@ -172,7 +172,7 @@ struct PlaylistEditorView: View {
                             Text(editMode ? "Update Playlist" : "Create Playlist")
                                 .frame(minWidth: 0, maxWidth: .infinity)
                                 .padding()
-                                .background(Color.blue)
+                                .background(Theme.brandGradient)
                                 .foregroundColor(.white)
                                 .cornerRadius(8)
                                 .fontWeight(.bold)

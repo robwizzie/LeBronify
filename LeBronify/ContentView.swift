@@ -23,7 +23,7 @@ struct ContentView: View {
                 VStack {
                     Image(systemName: "music.note.list")
                         .imageScale(.large)
-                        .foregroundStyle(.yellow)
+                        .foregroundStyle(Theme.brandGradient)
                         .font(.system(size: 60))
                     
                     Text("LeBronify Music")
@@ -49,7 +49,7 @@ struct TacoTuesdayBanner: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 20)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
                         .fill(Color.orange)
                 )
                 .shadow(radius: 5)

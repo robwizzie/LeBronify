@@ -212,8 +212,9 @@ class SongManager {
             categories.append("Love Songs")
         }
         
+        // Post-trade framing: the LA-era tracks are throwbacks now.
         if lowercaseName.contains("lakers") || lowercaseName.contains("la bron") {
-            categories.append("Lakers")
+            categories.append("The Lakers Years")
         }
         
         if lowercaseName.contains("king") || lowercaseName.contains("crown") ||
