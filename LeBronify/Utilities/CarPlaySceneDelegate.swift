@@ -70,27 +70,6 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
             createAllSongsSection()
         ]
         
-        // Create action for random song
-        let randomAction = CPGridButton(titleVariants: ["Random LeBron Song"],
-                                      image: UIImage(systemName: "shuffle") ?? UIImage()) { [weak self] _ in
-            if let randomSong = self?.viewModel.allSongs.randomElement() {
-                self?.viewModel.playSong(randomSong)
-                
-                // Navigate to now playing screen - CPNowPlayingTemplate.shared is not optional
-                let nowPlayingTemplate = CPNowPlayingTemplate.shared
-                // Use the modern API for pushing templates
-                if #available(iOS 14.0, *) {
-                    self?.interfaceController?.pushTemplate(nowPlayingTemplate, animated: true, completion: nil)
-                } else {
-                    // Fallback for older iOS versions
-                    self?.interfaceController?.pushTemplate(nowPlayingTemplate, animated: true)
-                }
-            }
-        }
-        
-        // Create grid with random button
-        let actionsGrid = CPGridTemplate(title: "LeBronify", gridButtons: [randomAction])
-        
         // Create list template with sections - return as a single list
         // (Cannot nest CPTabBarTemplate inside another CPTabBarTemplate)
         let listTemplate = CPListTemplate(title: "Library", sections: sections)
