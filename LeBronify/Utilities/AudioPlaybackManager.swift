@@ -138,7 +138,6 @@ class AudioPlaybackManager: NSObject {
         if let configured = Self.performAudioSessionOperation({
             print("AudioPlaybackManager: Initializing audio session on demand")
             try AVAudioSession.sharedInstance().setCategory(.playback)
-            try AVAudioSession.sharedInstance().setActive(true)
             return true
         }), configured {
             isAudioSessionInitialized = true
@@ -180,7 +179,6 @@ class AudioPlaybackManager: NSObject {
             
             // Now try to set up again
             try AVAudioSession.sharedInstance().setCategory(.playback)
-            try AVAudioSession.sharedInstance().setActive(true)
             return true
         }), configured {
             isAudioSessionInitialized = true
@@ -212,15 +210,10 @@ class AudioPlaybackManager: NSObject {
                AVAudioSession.InterruptionOptions(rawValue: optionsValue).contains(.shouldResume) {
                 
                 print("AudioPlaybackManager: Audio interruption ended - resuming playback")
-                Self.audioSessionQueue.async { [weak self] in
-                    do {
-                        try AVAudioSession.sharedInstance().setActive(true)
-                        DispatchQueue.main.async {
-                            _ = self?.resume()
-                        }
-                    } catch {
-                        print("AudioPlaybackManager: Failed to reactivate audio session after interruption: \(error)")
-                    }
+                DispatchQueue.main.async { [weak self] in
+                    // AVAudioPlayer activates the configured playback session
+                    // automatically when playback resumes.
+                    _ = self?.resume()
                 }
             }
             
@@ -452,17 +445,6 @@ class AudioPlaybackManager: NSObject {
             // Only activate audio session if not already active
             if !isAudioSessionInitialized {
                _ = setupAudioSession()
-            }
-            
-            let audioSession = AVAudioSession.sharedInstance()
-            if !audioSession.isOtherAudioPlaying && !audioSession.isInputAvailable {
-                if Self.performAudioSessionOperation({
-                    try audioSession.setActive(true)
-                    return true
-                }) != true {
-                    print("AudioPlaybackManager: Note - Audio session couldn't be activated")
-                    // Continue anyway - the session might still work for playback
-                }
             }
             
             // Clean up any existing player first
