@@ -212,15 +212,15 @@ class AudioPlaybackManager: NSObject {
                AVAudioSession.InterruptionOptions(rawValue: optionsValue).contains(.shouldResume) {
                 
                 print("AudioPlaybackManager: Audio interruption ended - resuming playback")
-                // First try to reactivate the session
-                if Self.performAudioSessionOperation({
-                    try AVAudioSession.sharedInstance().setActive(true)
-                    return true
-                }) == true {
-                    // Resume playback if it was playing before
-                    _ = resume()
-                } else {
-                    print("AudioPlaybackManager: Failed to reactivate audio session after interruption")
+                Self.audioSessionQueue.async { [weak self] in
+                    do {
+                        try AVAudioSession.sharedInstance().setActive(true)
+                        DispatchQueue.main.async {
+                            _ = self?.resume()
+                        }
+                    } catch {
+                        print("AudioPlaybackManager: Failed to reactivate audio session after interruption: \(error)")
+                    }
                 }
             }
             
@@ -297,7 +297,23 @@ class AudioPlaybackManager: NSObject {
     
     // MARK: - Playback Controls
     
-    func playSong(_ song: Song) -> Bool {
+    func playSong(_ song: Song, completion: @escaping (Bool) -> Void) {
+        Self.audioSessionQueue.async { [weak self] in
+            guard let self else {
+                DispatchQueue.main.async { completion(false) }
+                return
+            }
+
+            let didStart = self.playSongSynchronously(song)
+            DispatchQueue.main.async {
+                completion(didStart)
+            }
+        }
+    }
+
+    /// Runs exclusively on `audioSessionQueue`, keeping session activation and
+    /// potentially blocking player preparation away from the UI thread.
+    private func playSongSynchronously(_ song: Song) -> Bool {
         // Initialize audio session on-demand when a song is played
         if !setupAudioSession() {
             // If initial setup fails, try reset and reconfigure
@@ -349,6 +365,12 @@ class AudioPlaybackManager: NSObject {
     }
     
     func prepareAudio(for song: Song) {
+        Self.audioSessionQueue.async { [weak self] in
+            self?.prepareAudioSynchronously(for: song)
+        }
+    }
+
+    private func prepareAudioSynchronously(for song: Song) {
         // Initialize audio session on-demand
         if !setupAudioSession() {
             print("AudioPlaybackManager: Audio session setup failed during prepare")

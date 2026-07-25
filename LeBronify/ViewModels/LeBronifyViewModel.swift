@@ -271,7 +271,8 @@ class LeBronifyViewModel: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self = self else { return }
             
-            if self.audioManager.playSong(song) {
+            self.audioManager.playSong(song) { success in
+                if success {
                 self.isPlaying = true
                 self.currentPlaybackTime = 0
                 // Use the actual audio file duration from AVAudioPlayer, not the model's estimated duration
@@ -296,11 +297,12 @@ class LeBronifyViewModel: ObservableObject {
                 
                 // Print queue state for debugging
                 self.printQueueState()
-        } else {
+                } else {
                 print("ViewModel: Failed to play song: \(song.title)")
                 self.isPlaying = false
                 // Ensure hasPlaybackStarted remains false on failure
                 self.hasPlaybackStarted = false
+                }
             }
         }
     }
@@ -463,7 +465,8 @@ class LeBronifyViewModel: ObservableObject {
                     return
                 }
 
-                if self.audioManager.playSong(nextSong) {
+                self.audioManager.playSong(nextSong) { success in
+                    if success {
                     self.currentSong = nextSong
                     self.isPlaying = true
                     self.currentPlaybackTime = 0
@@ -473,11 +476,12 @@ class LeBronifyViewModel: ObservableObject {
                     self.isTacoSongPlaying = nextSong.title == "TACO TUESDAYYYYY"
                     NotificationCenter.default.post(name: NSNotification.Name("PlaybackStarted"), object: nil)
                     self.printQueueState()
-                } else {
+                    } else {
                     print("ViewModel: Failed to play next song: \(nextSong.title)")
                     self.isPlaying = false
+                    }
+                    self.isTransitioningToNextSong = false
                 }
-                self.isTransitioningToNextSong = false
             }
 
             // Safety timeout: reset flag after 2 seconds in case the async block never fires
@@ -530,7 +534,8 @@ class LeBronifyViewModel: ObservableObject {
                 guard let self = self else { return }
                 
                 // Start audio playback
-                if self.audioManager.playSong(previousSong) {
+                self.audioManager.playSong(previousSong) { success in
+                    if success {
                     self.currentSong = previousSong
                     self.isPlaying = true
                     self.currentPlaybackTime = 0
@@ -547,9 +552,10 @@ class LeBronifyViewModel: ObservableObject {
                     
                     // Print queue state for debugging
                     self.printQueueState()
-                } else {
+                    } else {
                     print("ViewModel: Failed to play previous song: \(previousSong.title)")
                     self.isPlaying = false
+                    }
                 }
             }
         } else {
@@ -1528,7 +1534,8 @@ class LeBronifyViewModel: ObservableObject {
                 guard let self = self else { return }
                 
                 // We use playSong directly to ensure proper playback
-                if self.audioManager.playSong(firstSong) {
+                self.audioManager.playSong(firstSong) { success in
+                    if success {
                     self.isPlaying = true
                     self.currentPlaybackTime = 0
                     self.duration = self.audioManager.duration > 0 ? self.audioManager.duration : firstSong.duration
@@ -1547,10 +1554,11 @@ class LeBronifyViewModel: ObservableObject {
                     
                     // Print queue state for debugging
                     self.printQueueState()
-                } else {
+                    } else {
                     print("ViewModel: Failed to play first song: \(firstSong.title)")
                     self.isPlaying = false
                     self.hasPlaybackStarted = false
+                    }
                 }
             }
         } else {
