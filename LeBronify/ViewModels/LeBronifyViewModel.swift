@@ -267,13 +267,6 @@ class LeBronifyViewModel: ObservableObject {
         // Update the current song immediately - this is important for the UI
         currentSong = song
         
-        // Ensure the audio session is active
-        do {
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("ViewModel: Failed to activate audio session: \(error)")
-        }
-        
         // Start audio playback with a small delay to ensure proper initialization
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self = self else { return }
@@ -463,13 +456,6 @@ class LeBronifyViewModel: ObservableObject {
         if let nextSong = queueManager.nextSong() {
             print("ViewModel: Playing next song: \(nextSong.title)")
 
-            // Ensure the audio session is active
-            do {
-                try AVAudioSession.sharedInstance().setActive(true)
-            } catch {
-                print("ViewModel: Failed to activate audio session: \(error)")
-            }
-
             // Start audio playback with a small delay to ensure proper initialization
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                 guard let self = self else {
@@ -538,13 +524,6 @@ class LeBronifyViewModel: ObservableObject {
         // Get the previous song from queue manager
         if let previousSong = queueManager.previousSong() {
             print("ViewModel: Playing previous song: \(previousSong.title)")
-            
-            // Ensure the audio session is active
-            do {
-                try AVAudioSession.sharedInstance().setActive(true)
-            } catch {
-                print("ViewModel: Failed to activate audio session: \(error)")
-            }
             
             // Start audio playback with a small delay to ensure proper initialization
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in

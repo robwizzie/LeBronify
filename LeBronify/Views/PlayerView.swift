@@ -63,7 +63,7 @@ struct PlayerView: View {
                 }
             }
         }
-        .onChange(of: viewModel.currentSong?.id) { _ in
+        .onChange(of: viewModel.currentSong?.id) {
             updateDominantColor()
         }
         .sheet(item: $activeSheet) { sheet in

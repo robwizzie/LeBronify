@@ -71,7 +71,9 @@ struct NowPlayingIndicator: View {
         }
         .frame(width: 14, height: 16, alignment: .bottom)
         .onAppear { animating = isAnimating }
-        .onChange(of: isAnimating) { newValue in animating = newValue }
+        .onChange(of: isAnimating) {
+            animating = isAnimating
+        }
     }
 }
 

@@ -145,7 +145,7 @@ struct ProcessMeterView: View {
                 animatedProgress = progress
             }
         }
-        .onChange(of: totalPlays) { _ in
+        .onChange(of: totalPlays) {
             withAnimation(.easeOut(duration: 0.5)) {
                 animatedProgress = progressToNext(
                     plays: totalPlays,

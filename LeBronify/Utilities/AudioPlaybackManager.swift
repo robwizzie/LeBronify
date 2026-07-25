@@ -66,6 +66,18 @@ private func updateSystemMediaPlayer(
 
 class AudioPlaybackManager: NSObject {
     static let shared = AudioPlaybackManager()
+
+    /// AVAudioSession can perform blocking work. Keep every session mutation
+    /// serialized and off the main thread.
+    private static let audioSessionQueueKey = DispatchSpecificKey<Void>()
+    private static let audioSessionQueue: DispatchQueue = {
+        let queue = DispatchQueue(
+            label: "com.lebronify.audio-session",
+            qos: .userInitiated
+        )
+        queue.setSpecific(key: audioSessionQueueKey, value: ())
+        return queue
+    }()
     
     private var audioPlayer: AVAudioPlayer?
     private var currentPlayingSong: Song? // Track the current song being played locally
@@ -89,9 +101,29 @@ class AudioPlaybackManager: NSObject {
     
     deinit {
         NotificationCenter.default.removeObserver(self)
-        
-        // Clean up audio session on deinit
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+
+        Self.deactivateAudioSession()
+    }
+
+    private static func performAudioSessionOperation<T>(
+        _ operation: () throws -> T
+    ) -> T? {
+        if DispatchQueue.getSpecific(key: audioSessionQueueKey) != nil {
+            return try? operation()
+        }
+
+        return audioSessionQueue.sync {
+            try? operation()
+        }
+    }
+
+    private static func deactivateAudioSession() {
+        audioSessionQueue.async {
+            try? AVAudioSession.sharedInstance().setActive(
+                false,
+                options: .notifyOthersOnDeactivation
+            )
+        }
     }
     
     // MARK: - Audio Session Setup
@@ -103,10 +135,12 @@ class AudioPlaybackManager: NSObject {
         }
         
         // Use minimal configuration from the start to avoid error -50
-        do {
+        if let configured = Self.performAudioSessionOperation({
             print("AudioPlaybackManager: Initializing audio session on demand")
             try AVAudioSession.sharedInstance().setCategory(.playback)
             try AVAudioSession.sharedInstance().setActive(true)
+            return true
+        }), configured {
             isAudioSessionInitialized = true
             print("AudioPlaybackManager: Audio session initialized successfully")
             
@@ -127,21 +161,19 @@ class AudioPlaybackManager: NSObject {
             )
             
             return true
-        } catch let error as NSError {
-            print("AudioPlaybackManager: Audio session setup failed: \(error)")
-            print("AudioPlaybackManager: Error code: \(error.code), domain: \(error.domain)")
-            return false
         }
+
+        print("AudioPlaybackManager: Audio session setup failed")
+        return false
     }
     
     private func resetAndReconfigureAudioSession() -> Bool {
         // Try to reset the audio session completely
         print("AudioPlaybackManager: Attempting to reset and reconfigure audio session")
         
-        do {
+        if let configured = Self.performAudioSessionOperation({
             // First deactivate the current session if it exists
             try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-            isAudioSessionInitialized = false
             
             // Small delay to ensure clean state
             Thread.sleep(forTimeInterval: 0.1)
@@ -149,14 +181,16 @@ class AudioPlaybackManager: NSObject {
             // Now try to set up again
             try AVAudioSession.sharedInstance().setCategory(.playback)
             try AVAudioSession.sharedInstance().setActive(true)
+            return true
+        }), configured {
             isAudioSessionInitialized = true
-            
             print("AudioPlaybackManager: Audio session reset successful")
             return true
-        } catch {
-            print("AudioPlaybackManager: Audio session reset failed: \(error)")
-            return false
         }
+
+        isAudioSessionInitialized = false
+        print("AudioPlaybackManager: Audio session reset failed")
+        return false
     }
     
     @objc private func handleAudioSessionInterruption(notification: Notification) {
@@ -179,12 +213,14 @@ class AudioPlaybackManager: NSObject {
                 
                 print("AudioPlaybackManager: Audio interruption ended - resuming playback")
                 // First try to reactivate the session
-                do {
+                if Self.performAudioSessionOperation({
                     try AVAudioSession.sharedInstance().setActive(true)
+                    return true
+                }) == true {
                     // Resume playback if it was playing before
                     _ = resume()
-                } catch {
-                    print("AudioPlaybackManager: Failed to reactivate audio session after interruption: \(error)")
+                } else {
+                    print("AudioPlaybackManager: Failed to reactivate audio session after interruption")
                 }
             }
             
@@ -398,10 +434,11 @@ class AudioPlaybackManager: NSObject {
             
             let audioSession = AVAudioSession.sharedInstance()
             if !audioSession.isOtherAudioPlaying && !audioSession.isInputAvailable {
-                do {
+                if Self.performAudioSessionOperation({
                     try audioSession.setActive(true)
-                } catch {
-                    print("AudioPlaybackManager: Note - Audio session already active or couldn't be activated: \(error)")
+                    return true
+                }) != true {
+                    print("AudioPlaybackManager: Note - Audio session couldn't be activated")
                     // Continue anyway - the session might still work for playback
                 }
             }
@@ -585,8 +622,8 @@ class AudioPlaybackManager: NSObject {
         // Notify observers that playback has stopped
         NotificationCenter.default.post(name: NSNotification.Name("PlaybackStopped"), object: nil)
         
-        // Deactivate audio session to free up resources
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        // Deactivate without blocking the UI.
+        Self.deactivateAudioSession()
         isAudioSessionInitialized = false
     }
     
