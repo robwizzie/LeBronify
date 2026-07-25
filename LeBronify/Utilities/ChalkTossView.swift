@@ -38,7 +38,7 @@ struct ChalkTossView: View {
                         .fill(
                             p.size > 6
                                 ? Color.white
-                                : Color.yellow.opacity(0.8)
+                                : Theme.royalBright.opacity(0.85)
                         )
                         .frame(width: p.size, height: p.size)
                         .opacity(p.opacity)

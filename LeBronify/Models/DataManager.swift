@@ -240,7 +240,7 @@ class DataManager {
     private func getCoverImageForCategory(_ category: String) -> String {
         // Map categories to appropriate cover images
         switch category.lowercased() {
-            case "lakers":
+            case "the lakers years", "lakers":
                 return "lebron_lakers"
             case "king james":
                 return "lebron_crown"

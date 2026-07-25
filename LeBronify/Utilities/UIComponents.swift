@@ -33,14 +33,45 @@ struct TopSongBadge: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color.yellow)
+                .fill(Theme.brandGradient)
                 .frame(width: 24, height: 24)
-                .shadow(radius: 2)
-            
+                .shadow(color: Theme.royal.opacity(0.6), radius: 3)
+
             Text("\(rank)")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.black)
+                .font(.system(size: 13, weight: .black))
+                .foregroundColor(.white)
         }
+    }
+}
+
+/// Three little equalizer bars that bounce while a track is playing.
+/// Gives every list a clear "you are here" marker.
+struct NowPlayingIndicator: View {
+    let isAnimating: Bool
+
+    @State private var animating = false
+
+    // Differing peaks and durations keep the bars out of sync with each other
+    private let peaks: [CGFloat] = [14, 8, 16]
+    private let durations: [Double] = [0.50, 0.38, 0.62]
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 2) {
+            ForEach(0..<3, id: \.self) { index in
+                Capsule()
+                    .fill(Theme.accentText)
+                    .frame(width: 2.5, height: animating ? peaks[index] : 4)
+                    .animation(
+                        animating
+                            ? .easeInOut(duration: durations[index]).repeatForever(autoreverses: true)
+                            : .easeOut(duration: 0.2),
+                        value: animating
+                    )
+            }
+        }
+        .frame(width: 14, height: 16, alignment: .bottom)
+        .onAppear { animating = isAnimating }
+        .onChange(of: isAnimating) { newValue in animating = newValue }
     }
 }
 
@@ -57,8 +88,15 @@ struct SongRow: View {
         self._playCount = State(initialValue: song.playCount)
     }
 
+    private var isNowPlaying: Bool {
+        viewModel.currentSong?.id == song.id
+    }
+
     var body: some View {
-        Button { viewModel.playSong(song) } label: {
+        Button {
+            viewModel.playSong(song)
+            Haptics.light()
+        } label: {
             HStack(spacing: 12) {
                 // Album art
                 ZStack(alignment: .topLeading) {
@@ -66,7 +104,8 @@ struct SongRow: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 52, height: 52)
-                        .cornerRadius(4)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
 
                     if let rank = song.topRank(in: viewModel.allSongs) {
                         TopSongBadge(rank: rank)
@@ -77,27 +116,33 @@ struct SongRow: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(song.title)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.white)
+                        .font(.system(size: 15, weight: isNowPlaying ? .bold : .medium))
+                        .foregroundColor(isNowPlaying ? Theme.accentText : Theme.textPrimary)
                         .lineLimit(1)
 
                     HStack(spacing: 6) {
                         Text(song.artist)
                             .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(Theme.textSecondary)
                             .lineLimit(1)
 
                         if playCount > 0 {
                             Text("·")
-                                .foregroundColor(.white.opacity(0.3))
+                                .foregroundColor(Theme.textTertiary)
                             Text("\(playCount) plays")
                                 .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.35))
+                                .foregroundColor(Theme.textTertiary)
                         }
                     }
                 }
 
                 Spacer()
+
+                // Live equalizer bars mark the track that's currently playing
+                if isNowPlaying {
+                    NowPlayingIndicator(isAnimating: viewModel.isPlaying)
+                        .padding(.trailing, 2)
+                }
 
                 // Ellipsis menu
                 Menu {
@@ -106,13 +151,13 @@ struct SongRow: View {
                     }
                     Button {
                         viewModel.playNext(song)
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        Haptics.medium()
                     } label: {
                         Label("Up Next", systemImage: "text.insert")
                     }
                     Button {
                         viewModel.addToQueue(song)
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        Haptics.light()
                     } label: {
                         Label("Add to Queue", systemImage: "list.bullet")
                     }
@@ -137,11 +182,16 @@ struct SongRow: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 16))
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(Theme.textSecondary)
                         .frame(width: 32, height: 32)
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
+                    .fill(isNowPlaying ? Theme.royal.opacity(0.14) : Color.clear)
+            )
         }
         .buttonStyle(PlainButtonStyle())
         .sheet(isPresented: $showingAddToPlaylist) {
@@ -344,21 +394,21 @@ struct MiniPlayerView: View {
     @Environment(\.colorScheme) var colorScheme
     @Binding var selectedTab: Int
 
-    private let miniPlayerBg = Color(red: 0.12, green: 0.12, blue: 0.12)
+    @State private var dragOffset: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
-            // Yellow progress bar at top
+            // Brand-gradient progress bar at top
             GeometryReader { geo in
                 let progress = viewModel.duration > 0
                     ? viewModel.currentPlaybackTime / viewModel.duration
                     : 0.0
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.white.opacity(0.08))
                     Rectangle()
-                        .fill(Color.yellow)
-                        .frame(width: geo.size.width * progress)
+                        .fill(Theme.brandGradient)
+                        .frame(width: max(0, geo.size.width * progress))
                 }
             }
             .frame(height: 3)
@@ -370,6 +420,7 @@ struct MiniPlayerView: View {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         selectedTab = 1
                     }
+                    Haptics.light()
                 } label: {
                     HStack(spacing: 10) {
                         if let currentSong = viewModel.currentSong {
@@ -377,26 +428,27 @@ struct MiniPlayerView: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
                                 .frame(width: 44, height: 44)
-                                .cornerRadius(6)
-                                .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+                                .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
+                                .shadow(color: .black.opacity(0.35), radius: 3, y: 1)
                         } else {
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
                                 .fill(Color.white.opacity(0.08))
                                 .frame(width: 44, height: 44)
                                 .overlay(
                                     Image(systemName: "music.note")
-                                        .foregroundColor(.white.opacity(0.3))
+                                        .foregroundColor(Theme.textTertiary)
                                 )
                         }
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(viewModel.currentSong?.title ?? "Not Playing")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundColor(Theme.textPrimary)
                                 .lineLimit(1)
                             Text(viewModel.currentSong?.artist ?? "LeBronify")
                                 .font(.system(size: 11))
-                                .foregroundColor(.white.opacity(0.5))
+                                .foregroundColor(Theme.textSecondary)
                                 .lineLimit(1)
                         }
                     }
@@ -408,27 +460,37 @@ struct MiniPlayerView: View {
 
                 // Playback controls
                 HStack(spacing: 18) {
-                    Button { viewModel.previousSong() } label: {
+                    Button {
+                        viewModel.previousSong()
+                        Haptics.light()
+                    } label: {
                         Image(systemName: "backward.fill")
                             .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(Theme.textPrimary.opacity(0.85))
                             .frame(width: 28, height: 28)
                     }
-                    Button { viewModel.togglePlayPause() } label: {
+                    Button {
+                        viewModel.togglePlayPause()
+                        Haptics.medium()
+                    } label: {
                         ZStack {
                             Circle()
-                                .fill(Color.white)
-                                .frame(width: 32, height: 32)
+                                .fill(Theme.brandGradient)
+                                .frame(width: 34, height: 34)
                             Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
                                 .font(.system(size: 14))
-                                .foregroundColor(.black)
+                                .foregroundColor(.white)
                                 .offset(x: viewModel.isPlaying ? 0 : 1)
                         }
                     }
-                    Button { viewModel.nextSong() } label: {
+                    .pressable(scale: 0.9)
+                    Button {
+                        viewModel.nextSong()
+                        Haptics.light()
+                    } label: {
                         Image(systemName: "forward.fill")
                             .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(Theme.textPrimary.opacity(0.85))
                             .frame(width: 28, height: 28)
                     }
                 }
@@ -436,10 +498,46 @@ struct MiniPlayerView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
         }
-        .background(miniPlayerBg)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.4), radius: 10, y: -4)
+        .background(Theme.elevated)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
+                .stroke(Theme.stroke, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.45), radius: 12, y: -4)
         .padding(.horizontal, 6)
+        .offset(x: dragOffset)
+        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: dragOffset)
+        // Swipe horizontally to skip tracks, swipe up to open the full player.
+        .gesture(
+            DragGesture(minimumDistance: 20)
+                .onChanged { value in
+                    if abs(value.translation.width) > abs(value.translation.height) {
+                        dragOffset = value.translation.width * 0.3
+                    }
+                }
+                .onEnded { value in
+                    let horizontal = value.translation.width
+                    let vertical = value.translation.height
+
+                    if abs(horizontal) > abs(vertical) {
+                        if horizontal < -50 {
+                            viewModel.nextSong()
+                            Haptics.medium()
+                        } else if horizontal > 50 {
+                            viewModel.previousSong()
+                            Haptics.medium()
+                        }
+                    } else if vertical < -40 {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedTab = 1
+                        }
+                        Haptics.light()
+                    }
+
+                    dragOffset = 0
+                }
+        )
     }
 }
 
@@ -466,69 +564,78 @@ struct PlaylistDetailView: View {
                 HStack(alignment: .top, spacing: 16) {
                     // Use the helper to get the appropriate image view
                     playlist.getImageView(size: 120)
-                    
+
                     VStack(alignment: .leading, spacing: 8) {
                         Text(playlist.name)
-                            .font(.title)
-                            .fontWeight(.bold)
-                        
+                            .font(Theme.title(24))
+                            .foregroundColor(Theme.textPrimary)
+
                         Text(playlist.description)
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                        
+                            .font(.system(size: 14))
+                            .foregroundColor(Theme.textSecondary)
+
                         Text("\(songs.count) songs")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 13))
+                            .foregroundColor(Theme.textTertiary)
                     }
-                    
+
                     Spacer()
-                    
+
                     // Edit button - only for non-system playlists
                     if !playlist.isSystem {
                         Button(action: {
                             showingEditPlaylist = true
+                            Haptics.light()
                         }) {
                             Image(systemName: "pencil.circle")
                                 .font(.title)
-                                .foregroundColor(.yellow)
+                                .foregroundColor(Theme.accentText)
                         }
                     }
                 }
                 .padding()
-                
+
                 // Play all button and sort options
-                HStack {
+                HStack(spacing: 10) {
                     Button(action: {
                         // Play all songs
                         viewModel.playPlaylist(playlist)
+                        Haptics.medium()
                     }) {
-                        HStack {
+                        HStack(spacing: 6) {
                             Image(systemName: "play.fill")
                             Text("Play All")
                         }
-                        .padding()
-                        .background(Color.yellow)
-                        .foregroundColor(.black)
-                        .cornerRadius(8)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(Theme.brandGradient)
+                        .clipShape(Capsule())
                     }
-                    
+                    .pressable()
+
                     // Add Shuffle button
                     Button(action: {
                         // Play shuffled
                         viewModel.playPlaylist(playlist, shuffled: true)
+                        Haptics.medium()
                     }) {
-                        HStack {
+                        HStack(spacing: 6) {
                             Image(systemName: "shuffle")
                             Text("Shuffle")
                         }
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .foregroundColor(.primary)
-                        .cornerRadius(8)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(Theme.textPrimary)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(Color.white.opacity(0.1))
+                        .clipShape(Capsule())
                     }
-                    
+                    .pressable()
+
                     Spacer()
-                    
+
                     Menu {
                         Button("Default") {
                             sortOption = .default
@@ -547,35 +654,39 @@ struct PlaylistDetailView: View {
                         }
                     } label: {
                         Image(systemName: "arrow.up.arrow.down")
-                            .foregroundColor(.primary)
+                            .foregroundColor(Theme.textSecondary)
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 4)
                 }
                 .padding(.horizontal)
-                
+
                 // Song list
                 if songs.isEmpty {
                     VStack(spacing: 20) {
                         Image(systemName: "music.note.list")
-                            .font(.system(size: 60))
-                            .foregroundColor(.gray)
-                        
-                        Text("This playlist is empty")
-                            .font(.title3)
-                            .foregroundColor(.gray)
+                            .font(.system(size: 56))
+                            .foregroundColor(Theme.royal.opacity(0.5))
+
+                        Text("This playbook is empty")
+                            .font(Theme.title(18))
+                            .foregroundColor(Theme.textSecondary)
                             .multilineTextAlignment(.center)
-                        
+
                         if selectedTab == 0 { // Only show button if in library (tab 0)
                             Button(action: {
                                 // Switch to all songs tab to add songs
                                 selectedTab = 2 // Assuming "All Songs" is tab 2
+                                Haptics.light()
                             }) {
                                 Text("Add Songs")
-                                    .padding()
-                                    .background(Color.yellow)
-                                    .foregroundColor(.black)
-                                    .cornerRadius(8)
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 24)
+                                    .padding(.vertical, 12)
+                                    .background(Theme.brandGradient)
+                                    .clipShape(Capsule())
                             }
+                            .pressable()
                         }
                     }
                     .frame(minWidth: 0, maxWidth: .infinity)
@@ -587,14 +698,16 @@ struct PlaylistDetailView: View {
                         VStack(spacing: 0) {
                             SongRow(song: song)
                                 .padding(.horizontal)
-                            
+
                             Divider()
+                                .overlay(Theme.stroke)
                                 .padding(.leading, 90)
                         }
                     }
                 }
             }
         }
+        .background(Theme.background.ignoresSafeArea())
         .navigationTitle(playlist.name)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingEditPlaylist) {
@@ -605,24 +718,32 @@ struct PlaylistDetailView: View {
     
     // Helper function to sort songs based on the selected sort option
     private func sortedSongs(_ songs: [Song]) -> [Song] {
-        switch sortOption {
-        case .default:
-            return songs
-        case .title:
-            return songs.sorted { $0.title < $1.title }
-        case .artist:
-            return songs.sorted { $0.artist < $1.artist }
-        case .plays:
-            return songs.sorted { $0.playCount > $1.playCount }
-        case .recent:
-            return songs.sorted { ($0.lastPlayed ?? Date.distantPast) > ($1.lastPlayed ?? Date.distantPast) }
-        }
+        songs.sorted(using: sortOption)
     }
 }
 
 // Sort options enum for playlists and libraries
 enum SortOption {
     case `default`, title, artist, plays, recent
+}
+
+extension Array where Element == Song {
+    /// Single home for the song-sorting logic that used to be copy-pasted into
+    /// every list view.
+    func sorted(using option: SortOption) -> [Song] {
+        switch option {
+        case .default:
+            return self
+        case .title:
+            return sorted { $0.title < $1.title }
+        case .artist:
+            return sorted { $0.artist < $1.artist }
+        case .plays:
+            return sorted { $0.playCount > $1.playCount }
+        case .recent:
+            return sorted { ($0.lastPlayed ?? Date.distantPast) > ($1.lastPlayed ?? Date.distantPast) }
+        }
+    }
 }
 
 // MARK: - Technical Foul Overlay (Flop Counter)
@@ -663,26 +784,28 @@ struct TechnicalFoulOverlay: View {
                     .shadow(color: .red.opacity(0.5), radius: 10)
 
                 Text("TECHNICAL FOUL!")
-                    .font(.system(size: 28, weight: .black))
-                    .foregroundColor(.yellow)
+                    .font(Theme.display(28))
+                    .foregroundColor(Theme.liberty)
 
                 Text(messages.randomElement() ?? messages[0])
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(Theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
 
                 Button {
                     isShowing = false
+                    Haptics.light()
                 } label: {
                     Text(dismissText)
                         .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
-                        .background(Color.yellow)
-                        .foregroundColor(.black)
-                        .cornerRadius(25)
+                        .background(Theme.brandGradient)
+                        .clipShape(Capsule())
                 }
+                .pressable()
             }
             .opacity(showContent ? 1 : 0)
             .scaleEffect(showContent ? 1 : 0.5)
@@ -721,7 +844,7 @@ struct TheDecisionOverlay: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 8)
-                        .background(Color.red)
+                        .background(Theme.liberty)
                         .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
@@ -740,12 +863,13 @@ struct TheDecisionOverlay: View {
                     VStack(spacing: 12) {
                         Text("\"\(song.title)\"")
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.textPrimary)
                             .multilineTextAlignment(.center)
 
-                        Text("is taking its talents to...")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white.opacity(0.7))
+                        Text("is taking its talents to South Beach... I mean Broad Street...")
+                            .font(.system(size: 15))
+                            .foregroundColor(Theme.textSecondary)
+                            .multilineTextAlignment(.center)
                             .italic()
                     }
                     .transition(.opacity)
@@ -754,8 +878,8 @@ struct TheDecisionOverlay: View {
                 if phase >= 3 {
                     // The destination
                     Text(destination.uppercased())
-                        .font(.system(size: 26, weight: .black))
-                        .foregroundColor(.yellow)
+                        .font(Theme.display(26))
+                        .foregroundStyle(Theme.brandGradient)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
@@ -869,9 +993,12 @@ struct PlaylistEditorViewWrapper: View {
     var body: some View {
         NavigationView {
             ZStack {
-                LinearGradient(gradient: Gradient(colors: [Color.purple.opacity(0.7), Color.blue.opacity(0.5)]), 
-                               startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
+                LinearGradient(
+                    colors: [Theme.navy, Theme.background],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
                 
                 ScrollView {
                     VStack(spacing: 20) {
@@ -890,7 +1017,7 @@ struct PlaylistEditorViewWrapper: View {
                                     .cornerRadius(10)
                             } else {
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color.blue.opacity(0.3))
+                                    .fill(Theme.royal.opacity(0.35))
                                     .frame(width: 150, height: 150)
                                     .overlay(
                                         Image(systemName: playlist?.coverImage ?? "music.note.list")
@@ -898,14 +1025,15 @@ struct PlaylistEditorViewWrapper: View {
                                             .foregroundColor(.white)
                                     )
                             }
-                            
+
                             Button(action: {
                                 showingImagePicker = true
+                                Haptics.light()
                             }) {
                                 Image(systemName: "camera.fill")
                                     .font(.title)
                                     .padding(10)
-                                    .background(Color.blue)
+                                    .background(Theme.brandGradient)
                                     .foregroundColor(.white)
                                     .clipShape(Circle())
                             }
@@ -957,13 +1085,13 @@ struct PlaylistEditorViewWrapper: View {
                             }
                             presentationMode.wrappedValue.dismiss()
                         }) {
-                            Text(playlist == nil ? "Create Playlist" : "Update Playlist")
+                            Text(playlist == nil ? "Draft Playbook" : "Update Playbook")
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(Color.blue)
-                                .cornerRadius(10)
+                                .background(Theme.brandGradient)
+                                .clipShape(Capsule())
                                 .padding(.horizontal)
                         }
                         .disabled(playlistName.isEmpty)
@@ -1124,18 +1252,20 @@ extension Playlist {
             Image(systemName: coverImage)
                 .resizable()
                 .scaledToFit()
+                .foregroundColor(.white)
                 .padding(size * 0.25)
                 .frame(width: size, height: size)
-                .background(Color.blue.opacity(0.1))
+                .background(Theme.courtGradient)
                 .cornerRadius(size * 0.1)
         } else {
             // Fallback
             Image(systemName: "music.note.list")
                 .resizable()
                 .scaledToFit()
+                .foregroundColor(.white)
                 .padding(size * 0.2)
                 .frame(width: size, height: size)
-                .background(Color.blue.opacity(0.2))
+                .background(Theme.courtGradient)
                 .cornerRadius(size * 0.1)
         }
     }

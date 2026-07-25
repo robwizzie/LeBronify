@@ -41,6 +41,12 @@ class LeBronifyViewModel: ObservableObject {
     @Published var decisionDestination: String = ""
     @Published var showingChalkToss: Bool = false
     @Published var showingAchievement: Bool = false
+
+    // Trust The Process: ringing the bell when the listener reaches a new tier
+    @Published var showingBellRing: Bool = false
+    @Published var bellRingTierName: String = ""
+    private let processTierKey = "lebronify_process_tier_index"
+
     let achievementManager = AchievementManager.shared
     private var recentPauseTimes: [Date] = []
     private var pendingDecisionAction: (() -> Void)?
@@ -700,63 +706,39 @@ class LeBronifyViewModel: ObservableObject {
     // MARK: - Playlist/Collection Playback
     
     // Play a playlist 
-    func playPlaylist(_ playlist: Playlist, shuffled: Bool = false) {
-        print("ViewModel: Playing playlist: \(playlist.name), shuffled: \(shuffled)")
-        
-        let songs = getSongs(for: playlist)
-        if songs.isEmpty {
-            print("ViewModel: Playlist is empty, nothing to play")
+    /// Queues an arbitrary list of songs and starts playback.
+    /// All the "play a collection" entry points funnel through here.
+    func playSongs(_ songs: [Song], shuffled: Bool = false) {
+        guard !songs.isEmpty else {
+            print("ViewModel: Nothing to play — empty song list")
             return
         }
-        
+
         // Set up the queue first
         queueManager.shuffleEnabled = shuffled
         queueManager.setQueue(songs: songs)
-        
+
         // Then play the first song
         if let firstSong = queueManager.currentSongInQueue {
             playSong(firstSong)
         }
     }
-    
+
+    func playPlaylist(_ playlist: Playlist, shuffled: Bool = false) {
+        print("ViewModel: Playing playlist: \(playlist.name), shuffled: \(shuffled)")
+        playSongs(getSongs(for: playlist), shuffled: shuffled)
+    }
+
     // Play artist songs
     func playArtistSongs(artist: String, shuffled: Bool = false) {
         print("ViewModel: Playing artist songs: \(artist), shuffled: \(shuffled)")
-        
-        let songs = allSongs.filter { $0.artist == artist }
-        if songs.isEmpty {
-            print("ViewModel: No songs found for artist")
-            return
-        }
-        
-        // Set up the queue first
-        queueManager.shuffleEnabled = shuffled
-        queueManager.setQueue(songs: songs)
-        
-        // Then play the first song
-        if let firstSong = queueManager.currentSongInQueue {
-            playSong(firstSong)
-                }
+        playSongs(allSongs.filter { $0.artist == artist }, shuffled: shuffled)
     }
-    
+
     // Play category songs
     func playCategorySongs(category: String, shuffled: Bool = false) {
         print("ViewModel: Playing category songs: \(category), shuffled: \(shuffled)")
-        
-        let songs = allSongs.filter { $0.categories.contains(category) }
-        if songs.isEmpty {
-            print("ViewModel: No songs found for category")
-            return
-        }
-        
-        // Set up the queue first
-        queueManager.shuffleEnabled = shuffled
-        queueManager.setQueue(songs: songs)
-        
-        // Then play the first song
-        if let firstSong = queueManager.currentSongInQueue {
-            playSong(firstSong)
-        }
+        playSongs(allSongs.filter { $0.categories.contains(category) }, shuffled: shuffled)
     }
     
     // MARK: - Playlist Management
@@ -1164,6 +1146,33 @@ class LeBronifyViewModel: ObservableObject {
             playlists: playlists,
             sessionSongsPlayed: sessionSongsPlayed
         )
+        checkProcessTier()
+    }
+
+    // MARK: - Trust The Process
+
+    /// Rings the Liberty Bell when total plays push the listener into a new
+    /// Process tier. Fires once per tier — the reached index is persisted.
+    private func checkProcessTier() {
+        let totalPlays = allSongs.reduce(0) { $0 + $1.playCount }
+        let tier = ProcessTier.current(for: totalPlays)
+
+        guard let tierIndex = ProcessTier.all.firstIndex(where: { $0.name == tier.name }) else { return }
+
+        let defaults = UserDefaults.standard
+        // Treat a missing key as "already at the starting tier" so a brand new
+        // install doesn't ring the bell just for opening the app.
+        let previousIndex = defaults.object(forKey: processTierKey) as? Int ?? 0
+
+        guard tierIndex > previousIndex else { return }
+
+        defaults.set(tierIndex, forKey: processTierKey)
+        bellRingTierName = tier.name
+        showingBellRing = true
+    }
+
+    func bellRingComplete() {
+        showingBellRing = false
     }
 
     // MARK: - AD Management

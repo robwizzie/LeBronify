@@ -21,7 +21,7 @@ struct AddToPlaylistView: View {
     @State private var successMessage = ""
     
     // Colors for the UI
-    private let gradientColors = [Color.indigo.opacity(0.7), Color.blue.opacity(0.3)]
+    private let gradientColors = [Theme.navy, Theme.background]
     
     var body: some View {
         NavigationView {
@@ -56,7 +56,7 @@ struct AddToPlaylistView: View {
                                     Image(systemName: "chevron.right")
                                 }
                                 .padding()
-                                .background(Color.blue.opacity(0.2))
+                                .background(Theme.royal.opacity(0.3))
                                 .cornerRadius(10)
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -205,7 +205,7 @@ struct PlaylistRowWithAddButton: View {
                     Image(systemName: playlist.coverImage)
                         .font(.system(size: 24))
                         .frame(width: 50, height: 50)
-                        .background(Color.blue.opacity(0.2))
+                        .background(Theme.royal.opacity(0.3))
                         .cornerRadius(5)
                 }
             }
@@ -237,7 +237,7 @@ struct PlaylistRowWithAddButton: View {
                 Button(action: onAddSong) {
                     Image(systemName: "plus.circle.fill")
                         .font(.title3)
-                        .foregroundColor(.blue)
+                        .foregroundColor(Theme.accentText)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
