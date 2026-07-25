@@ -45,7 +45,7 @@ class AlbumArtHelper {
         // Try category-based defaults
         for category in song.categories {
             switch category.lowercased() {
-            case "lakers":
+            case "the lakers years", "lakers":
                 return Image("lebron_lakers")
             case "king james":
                 return Image("lebron_crown")

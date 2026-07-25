@@ -83,6 +83,41 @@ class AchievementManager: ObservableObject {
             description: "Reach 500 total plays across all songs",
             icon: "building.columns.fill",
             isUnlocked: false
+        ),
+        Achievement(
+            id: "bell_ringer",
+            name: "Bell Ringer",
+            description: "Reach 10 total plays and ring the bell",
+            icon: "bell.fill",
+            isUnlocked: false
+        ),
+        Achievement(
+            id: "brotherly_love",
+            name: "Brotherly Love",
+            description: "Crown 20 songs as All-Stars",
+            icon: "heart.fill",
+            isUnlocked: false
+        ),
+        Achievement(
+            id: "the_answer",
+            name: "The Answer",
+            description: "Play 3 different songs 3 times each",
+            icon: "3.circle.fill",
+            isUnlocked: false
+        ),
+        Achievement(
+            id: "broad_street_run",
+            name: "Broad Street Run",
+            description: "Play 10 different songs in one session",
+            icon: "figure.run",
+            isUnlocked: false
+        ),
+        Achievement(
+            id: "trust_the_process",
+            name: "Trust The Process",
+            description: "Reach Contender status — 350 total plays",
+            icon: "crown.fill",
+            isUnlocked: false
         )
     ]
 
@@ -94,6 +129,8 @@ class AchievementManager: ObservableObject {
         let totalListenedSeconds = songs.reduce(0.0) { $0 + Double($1.playCount) * $1.duration }
         let allSongsPlayed = songs.allSatisfy { $0.playCount > 0 }
 
+        let songsPlayedThrice = songs.filter { $0.playCount >= 3 }.count
+
         let checks: [(String, Bool)] = [
             ("rookie_of_the_year", songsPlayed >= 1),
             ("sixth_man", sessionSongsPlayed.count >= 6),
@@ -101,7 +138,12 @@ class AchievementManager: ObservableObject {
             ("mvp", totalPlays >= 100),
             ("forty_k_club", totalListenedSeconds >= 40000),
             ("ring_ceremony", allSongsPlayed && !songs.isEmpty),
-            ("hall_of_fame", totalPlays >= 500)
+            ("hall_of_fame", totalPlays >= 500),
+            ("bell_ringer", totalPlays >= 10),
+            ("brotherly_love", allStars >= 20),
+            ("the_answer", songsPlayedThrice >= 3),
+            ("broad_street_run", sessionSongsPlayed.count >= 10),
+            ("trust_the_process", totalPlays >= 350)
         ]
 
         for (id, met) in checks {
@@ -161,30 +203,23 @@ struct AchievementUnlockedOverlay: View {
 
                 ZStack {
                     Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [.yellow, .orange],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 50
-                            )
-                        )
+                        .fill(Theme.celebrationGradient)
                         .frame(width: 100, height: 100)
-                        .shadow(color: .yellow.opacity(0.6), radius: 20)
+                        .shadow(color: Theme.royal.opacity(0.7), radius: 22)
 
                     Image(systemName: achievement.icon)
                         .font(.system(size: 44))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                 }
                 .scaleEffect(showContent ? 1.0 : 0.3)
 
                 Text(achievement.name)
-                    .font(.system(size: 26, weight: .black))
-                    .foregroundColor(.yellow)
+                    .font(Theme.display(26))
+                    .foregroundStyle(Theme.brandGradient)
 
                 Text(achievement.description)
                     .font(.system(size: 15))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(Theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
             }
@@ -216,16 +251,16 @@ struct AchievementsTabView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text("Trophy Case")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                        .font(Theme.title(20))
+                        .foregroundColor(Theme.textPrimary)
 
                     Spacer()
 
                     let unlocked = viewModel.achievementManager.achievements.filter { $0.isUnlocked }.count
                     let total = viewModel.achievementManager.achievements.count
                     Text("\(unlocked)/\(total)")
-                        .font(.system(size: 15, weight: .bold, design: .monospaced))
-                        .foregroundColor(.yellow)
+                        .font(Theme.stat(15))
+                        .foregroundColor(Theme.accentText)
                 }
                 .padding(.horizontal)
                 .padding(.top)
@@ -253,41 +288,41 @@ struct AchievementCard: View {
             ZStack {
                 Circle()
                     .fill(achievement.isUnlocked
-                          ? LinearGradient(colors: [.yellow, .orange], startPoint: .top, endPoint: .bottom)
-                          : LinearGradient(colors: [Color.gray.opacity(0.3), Color.gray.opacity(0.2)], startPoint: .top, endPoint: .bottom))
+                          ? AnyShapeStyle(Theme.brandGradient)
+                          : AnyShapeStyle(Color.white.opacity(0.08)))
                     .frame(width: 56, height: 56)
 
                 Image(systemName: achievement.isUnlocked ? achievement.icon : "lock.fill")
                     .font(.system(size: 24))
-                    .foregroundColor(achievement.isUnlocked ? .black : .gray)
+                    .foregroundColor(achievement.isUnlocked ? .white : Theme.textTertiary)
             }
 
             Text(achievement.name)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundColor(achievement.isUnlocked ? .white : .gray)
+                .foregroundColor(achievement.isUnlocked ? Theme.textPrimary : Theme.textTertiary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
 
             Text(achievement.isUnlocked ? achievement.description : "???")
                 .font(.system(size: 11))
-                .foregroundColor(achievement.isUnlocked ? .white.opacity(0.5) : .gray.opacity(0.5))
+                .foregroundColor(achievement.isUnlocked ? Theme.textSecondary : Theme.textTertiary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
 
             if achievement.isUnlocked, let date = achievement.unlockedDate {
                 Text(date, style: .date)
                     .font(.system(size: 9))
-                    .foregroundColor(.yellow.opacity(0.5))
+                    .foregroundColor(Theme.accentText.opacity(0.7))
             }
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 8)
         .frame(maxWidth: .infinity)
-        .background(Color.white.opacity(achievement.isUnlocked ? 0.06 : 0.03))
-        .cornerRadius(12)
+        .background(Theme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(achievement.isUnlocked ? Color.yellow.opacity(0.3) : Color.clear, lineWidth: 1)
+            RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
+                .stroke(achievement.isUnlocked ? Theme.royal.opacity(0.5) : Theme.stroke, lineWidth: 1)
         )
     }
 }

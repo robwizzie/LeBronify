@@ -17,16 +17,21 @@ struct HomeView: View {
     @State private var tacoObserver: NSObjectProtocol? = nil
     @State private var playCountObserver: NSObjectProtocol? = nil
 
-    private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
-
     var body: some View {
         ZStack {
             NavigationView {
-                ZStack {
-                    bgColor.ignoresSafeArea()
+                ZStack(alignment: .top) {
+                    Theme.background.ignoresSafeArea()
+
+                    // Brand tint bleeding down from the top of the scroll view
+                    Theme.ambientGradient
+                        .frame(height: 380)
+                        .ignoresSafeArea(edges: .top)
 
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 24) {
+                            GreetingBar()
+
                             // Taco Tuesday Banner (only on Tuesdays)
                             if TacoTuesdayManager.shared.isTacoTuesday {
                                 tacoTuesdayBanner
@@ -34,9 +39,11 @@ struct HomeView: View {
 
                             HeaderView()
                             RandomSongButton()
+                            ProcessMeterView()
                             SongOfDaySection()
 
                             if !viewModel.recentlyPlayedSongs.isEmpty {
+                                JumpBackInSection()
                                 PlaylistRow(title: "Recent Highlights", songs: viewModel.recentlyPlayedSongs)
                             }
 
@@ -49,7 +56,7 @@ struct HomeView: View {
                             AllSongsSection()
                         }
                         .padding(.vertical)
-                        .padding(.bottom, viewModel.currentSong != nil ? 80 : 0)
+                        .padding(.bottom, viewModel.currentSong != nil ? 90 : 8)
                     }
                 }
                 .navigationBarHidden(true)
@@ -113,10 +120,10 @@ struct HomeView: View {
     // Taco Tuesday Banner
     var tacoTuesdayBanner: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: Theme.Radius.large, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color.yellow, Color.orange],
+                        colors: [Color.orange, Theme.liberty],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -124,7 +131,7 @@ struct HomeView: View {
 
             VStack(spacing: 12) {
                 Text("TACO TUESDAYYYYY")
-                    .font(.system(size: 26, weight: .black, design: .rounded))
+                    .font(Theme.display(26))
                     .foregroundColor(.white)
                     .shadow(color: .black.opacity(0.3), radius: 2, y: 2)
 
@@ -136,6 +143,7 @@ struct HomeView: View {
 
                 Button {
                     viewModel.playSong(TacoTuesdayManager.shared.createTacoTuesdaySong())
+                    Haptics.medium()
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "play.fill")
@@ -147,8 +155,9 @@ struct HomeView: View {
                     .padding(.vertical, 10)
                     .background(Color.white)
                     .foregroundColor(.orange)
-                    .cornerRadius(25)
+                    .clipShape(Capsule())
                 }
+                .pressable()
             }
             .padding()
         }
@@ -159,34 +168,95 @@ struct HomeView: View {
 
 // MARK: - Component Views
 
+/// Time-aware greeting plus a quick shuffle shortcut.
+struct GreetingBar: View {
+    @EnvironmentObject var viewModel: LeBronifyViewModel
+
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 0..<5: return "Still up?"
+        case 5..<12: return "Good morning"
+        case 12..<17: return "Good afternoon"
+        default: return "Good evening"
+        }
+    }
+
+    var body: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(greeting)
+                    .font(Theme.display(24))
+                    .foregroundColor(Theme.textPrimary)
+
+                Text("Welcome to South Philly")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Theme.textTertiary)
+            }
+
+            Spacer()
+
+            Button {
+                viewModel.playSongs(viewModel.allSongs, shuffled: true)
+                Haptics.medium()
+            } label: {
+                Image(systemName: "shuffle")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 40, height: 40)
+                    .background(Theme.royal.opacity(0.9))
+                    .clipShape(Circle())
+            }
+            .pressable()
+        }
+        .padding(.horizontal)
+    }
+}
+
 struct HeaderView: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             Image("lebron_banner")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .frame(height: 190)
                 .clipped()
-                .cornerRadius(16)
 
+            // Brand wash over the photo so it reads Sixers rather than Lakers
             LinearGradient(
-                colors: [.clear, .black.opacity(0.8)],
-                startPoint: .center,
+                colors: [Theme.royal.opacity(0.55), .clear, Theme.navy.opacity(0.95)],
+                startPoint: .topLeading,
                 endPoint: .bottom
             )
-            .cornerRadius(16)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("LEBRONIFY")
-                    .font(.system(size: 32, weight: .black, design: .rounded))
-                    .foregroundColor(.white)
+                HStack(spacing: 8) {
+                    Text("LEBRONIFY")
+                        .font(Theme.display(32))
+                        .foregroundColor(.white)
+
+                    Text("PHL")
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Theme.liberty)
+                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                }
 
                 Text("The King's Parody Collection")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(.white.opacity(0.8))
             }
             .padding(16)
         }
+        .frame(height: 190)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.large, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.large, style: .continuous)
+                .stroke(Theme.stroke, lineWidth: 1)
+        )
         .padding(.horizontal)
     }
 }
@@ -195,65 +265,120 @@ struct RandomSongButton: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
 
     var body: some View {
-        Button { viewModel.playRandomSong() } label: {
+        Button {
+            viewModel.playRandomSong()
+            Haptics.medium()
+        } label: {
             HStack(spacing: 8) {
-                Image(systemName: "shuffle")
+                Image(systemName: "sparkles")
                     .font(.system(size: 16, weight: .bold))
                 Text("Let The King Decide")
-                    .font(.system(size: 16, weight: .bold))
             }
-            .foregroundColor(.black)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(Color.yellow)
-            .cornerRadius(25)
         }
+        .buttonStyle(PrimaryActionButtonStyle())
         .padding(.horizontal)
+    }
+}
+
+/// Two-column grid of recently played songs — one tap back into what you were playing.
+struct JumpBackInSection: View {
+    @EnvironmentObject var viewModel: LeBronifyViewModel
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 10),
+        GridItem(.flexible(), spacing: 10)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Jump Back In", subtitle: "Pick up where you left off")
+
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(Array(viewModel.recentlyPlayedSongs.prefix(6))) { song in
+                    Button {
+                        viewModel.playSong(song)
+                        Haptics.light()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(song.albumArt)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 48, height: 48)
+                                .clipped()
+
+                            Text(song.title)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(Theme.textPrimary)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                                .padding(.trailing, 6)
+
+                            Spacer(minLength: 0)
+                        }
+                        .frame(height: 48)
+                        .background(Color.white.opacity(0.07))
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
+                    }
+                    .pressable()
+                }
+            }
+            .padding(.horizontal)
+        }
     }
 }
 
 struct SongOfDaySection: View {
     @EnvironmentObject var viewModel: LeBronifyViewModel
-    private let cardColor = Color(red: 0.11, green: 0.11, blue: 0.11)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("LeBron's Pick of the Day")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
-                .padding(.horizontal)
+            SectionHeader(title: "LeBron's Pick of the Day")
 
             if let song = viewModel.getSongOfTheDay() {
-                HStack(spacing: 14) {
-                    Image(song.albumArt)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 72, height: 72)
-                        .cornerRadius(8)
+                Button {
+                    viewModel.playSong(song)
+                    Haptics.medium()
+                } label: {
+                    HStack(spacing: 14) {
+                        Image(song.albumArt)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 72, height: 72)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(song.title)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("TODAY'S STARTER")
+                                .eyebrowStyle(color: Theme.liberty)
 
-                        Text(song.artist)
-                            .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.5))
-                            .lineLimit(1)
+                            Text(song.title)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(Theme.textPrimary)
+                                .lineLimit(1)
+
+                            Text(song.artist)
+                                .font(.system(size: 13))
+                                .foregroundColor(Theme.textSecondary)
+                                .lineLimit(1)
+                        }
+
+                        Spacer()
+
+                        ZStack {
+                            Circle()
+                                .fill(Theme.brandGradient)
+                                .frame(width: 42, height: 42)
+
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white)
+                                .offset(x: 1)
+                        }
                     }
-
-                    Spacer()
-
-                    Button { viewModel.playSong(song) } label: {
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 42))
-                            .foregroundColor(Color.yellow)
-                    }
+                    .padding(14)
+                    .surfaceCard()
                 }
-                .padding(14)
-                .background(cardColor)
-                .cornerRadius(12)
+                .pressable()
                 .padding(.horizontal)
             }
         }
@@ -267,49 +392,50 @@ struct PlaylistsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Playbooks")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
-
-                Spacer()
-
+            SectionHeader(title: "Playbooks") {
                 Button {
                     showingAddPlaylist = true
+                    Haptics.light()
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "plus.circle.fill")
                         Text("Draft")
                     }
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(Theme.accentText)
                 }
             }
-            .padding(.horizontal)
 
             let userPlaylists = viewModel.playlists.filter { !$0.isSystem }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(userPlaylists) { playlist in
-                        NavigationLink(destination: PlaylistDetailView(playlist: playlist, selectedTab: $selectedTab)) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                playlist.getImageView(size: 140)
+            if userPlaylists.isEmpty {
+                Text("No playbooks drafted yet. Tap Draft to build your first lineup.")
+                    .font(.system(size: 13))
+                    .foregroundColor(Theme.textTertiary)
+                    .padding(.horizontal)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 14) {
+                        ForEach(userPlaylists) { playlist in
+                            NavigationLink(destination: PlaylistDetailView(playlist: playlist, selectedTab: $selectedTab)) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    playlist.getImageView(size: 140)
 
-                                Text(playlist.name)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .lineLimit(1)
+                                    Text(playlist.name)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(Theme.textPrimary)
+                                        .lineLimit(1)
 
-                                Text("\(viewModel.getSongs(for: playlist).count) songs")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.white.opacity(0.4))
+                                    Text("\(viewModel.getSongs(for: playlist).count) songs")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(Theme.textTertiary)
+                                }
+                                .frame(width: 140)
                             }
-                            .frame(width: 140)
                         }
                     }
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
             }
         }
         .sheet(isPresented: $showingAddPlaylist) {
@@ -327,43 +453,36 @@ struct Starting5Section: View {
         let hasPlays = viewModel.allSongs.contains { $0.playCount > 0 }
         if hasPlays {
             VStack(alignment: .leading, spacing: 12) {
-                Text("GOAT Debate")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal)
+                SectionHeader(title: "GOAT Debate")
 
                 Button {
                     showingShareCard = true
+                    Haptics.light()
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "trophy.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(.yellow)
+                            .font(.system(size: 26))
+                            .foregroundColor(Theme.liberty)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text("My Starting 5")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(Theme.textPrimary)
                             Text("Share your top played songs")
                                 .font(.system(size: 13))
-                                .foregroundColor(.white.opacity(0.5))
+                                .foregroundColor(Theme.textSecondary)
                         }
 
                         Spacer()
 
                         Image(systemName: "square.and.arrow.up")
                             .font(.system(size: 16))
-                            .foregroundColor(.yellow)
+                            .foregroundColor(Theme.accentText)
                     }
                     .padding(16)
-                    .background(Color.white.opacity(0.06))
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.yellow.opacity(0.2), lineWidth: 1)
-                    )
+                    .surfaceCard()
                 }
-                .buttonStyle(PlainButtonStyle())
+                .pressable()
                 .padding(.horizontal)
             }
             .sheet(isPresented: $showingShareCard) {
@@ -379,10 +498,7 @@ struct AllSongsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("The Full Roster")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
-                .padding(.horizontal)
+            SectionHeader(title: "The Full Roster", subtitle: "\(viewModel.allSongs.count) tracks deep")
 
             ForEach(viewModel.allSongs.sorted { $0.playCount > $1.playCount }) { song in
                 SongRow(song: song)
@@ -417,7 +533,7 @@ struct ADOverlayView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.85)
+            Color.black.opacity(0.88)
                 .ignoresSafeArea()
                 .onTapGesture {
                     // Tapping background also dismisses once button is visible
@@ -426,7 +542,7 @@ struct ADOverlayView: View {
 
             VStack(spacing: 20) {
                 Text(viewModel.currentAd?.title ?? "AD BREAK")
-                    .font(.system(size: 28, weight: .black))
+                    .font(Theme.display(28))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
 
@@ -434,29 +550,32 @@ struct ADOverlayView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 260)
-                    .cornerRadius(12)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous))
 
                 Text(viewModel.currentAd?.message ?? "")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(Theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
                 if dismissButtonVisible {
-                    Button { dismissAndNavigate() } label: {
+                    Button {
+                        dismissAndNavigate()
+                    } label: {
                         Text(adDismissText)
                             .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
-                            .background(Color.yellow)
-                            .foregroundColor(.black)
-                            .cornerRadius(25)
+                            .background(Theme.brandGradient)
+                            .clipShape(Capsule())
                     }
+                    .pressable()
                     .transition(.opacity.combined(with: .scale))
                 } else {
                     Text(waitMessage)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white.opacity(0.4))
+                        .foregroundColor(Theme.textTertiary)
                 }
             }
             .padding()
@@ -472,6 +591,7 @@ struct ADOverlayView: View {
     }
 
     private func dismissAndNavigate() {
+        Haptics.light()
         viewModel.dismissAd()
         // Smoothly navigate to Now Playing after dismissing
         if viewModel.currentSong != nil {
