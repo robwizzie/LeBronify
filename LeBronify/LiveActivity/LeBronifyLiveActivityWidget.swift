@@ -76,7 +76,7 @@ struct LeBronifyLiveActivityWidget: Widget {
                         
                         Image(systemName: context.state.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                             .font(.system(size: 36))
-                            .foregroundColor(.yellow)
+                            .foregroundColor(Theme.royalBright)
                         
                         Image(systemName: "forward.fill")
                             .font(.system(size: 22))
@@ -98,13 +98,13 @@ struct LeBronifyLiveActivityWidget: Widget {
                                 
                                 // Progress track
                                 Rectangle()
-                                    .fill(Color.yellow)
+                                    .fill(Theme.royalBright)
                                     .frame(width: max(0, geometry.size.width * context.state.playbackProgress), height: 4)
                                     .cornerRadius(2)
                                 
                                 // Thumb indicator
                                 Circle()
-                                    .fill(Color.yellow)
+                                    .fill(Theme.royalBright)
                                     .frame(width: 12, height: 12)
                                     .offset(x: max(0, geometry.size.width * context.state.playbackProgress - 6))
                             }
@@ -152,7 +152,7 @@ struct LeBronifyLiveActivityWidget: Widget {
                     // Play/pause icon
                     Image(systemName: context.state.isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 10))
-                        .foregroundColor(.yellow)
+                        .foregroundColor(Theme.royalBright)
                 }
             } minimal: {
                 // Minimal view (when other activities are present)
@@ -162,7 +162,7 @@ struct LeBronifyLiveActivityWidget: Widget {
                     .frame(width: 20, height: 20)
                     .cornerRadius(4)
             }
-            .keylineTint(.yellow)
+            .keylineTint(Theme.royal)
         }
     }
     
@@ -228,7 +228,7 @@ struct LockScreenLiveActivityView: View {
                     
                     Image(systemName: context.state.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                         .font(.system(size: 32))
-                        .foregroundColor(.yellow)
+                        .foregroundColor(Theme.royalBright)
                     
                     Image(systemName: "forward.fill")
                         .font(.system(size: 20))
@@ -247,13 +247,13 @@ struct LockScreenLiveActivityView: View {
                     
                     // Progress track
                     Rectangle()
-                        .fill(Color.yellow)
+                        .fill(Theme.royalBright)
                         .frame(width: max(0, geometry.size.width * context.state.playbackProgress), height: 4)
                         .cornerRadius(2)
                     
                     // Thumb indicator
                     Circle()
-                        .fill(Color.yellow)
+                        .fill(Theme.royalBright)
                         .frame(width: 12, height: 12)
                         .offset(x: max(0, geometry.size.width * context.state.playbackProgress - 6))
                 }

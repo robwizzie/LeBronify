@@ -70,16 +70,39 @@ struct MainTabView: View {
     @State private var showTacoRain = false
     @State private var tacoObserver: NSObjectProtocol? = nil
 
-    private let tabBarBg = Color(red: 0.07, green: 0.07, blue: 0.07)
+    init() {
+        // Must run before the tab bar is created, so it can't live in .onAppear.
+        Self.configureTabBarAppearance()
+    }
+
+    /// Opaque navy tab bar so the mini player doesn't blur into a translucent
+    /// system background.
+    private static func configureTabBarAppearance() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(Theme.background)
+        appearance.shadowColor = UIColor(Theme.stroke)
+
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
+            // Tabs are declared in display order, but keep their original tags —
+            // `selectedTab == 1` means Now Playing everywhere else in the app.
             TabView(selection: $selectedTab) {
                 HomeView()
                     .tabItem {
                         Label("Home", systemImage: "crown.fill")
                     }
                     .tag(0)
+
+                SearchView()
+                    .tabItem {
+                        Label("Search", systemImage: "magnifyingglass")
+                    }
+                    .tag(3)
 
                 PlayerView()
                     .tabItem {
@@ -93,7 +116,7 @@ struct MainTabView: View {
                     }
                     .tag(2)
             }
-            .accentColor(.yellow)
+            .accentColor(Theme.accentText)
 
             // Mini player overlay - appears above tab bar on non-player tabs
             if viewModel.currentSong != nil && selectedTab != 1 {
@@ -110,6 +133,7 @@ struct MainTabView: View {
         .overlay(technicalFoulOverlay)
         .overlay(decisionOverlay)
         .overlay(chalkTossOverlay)
+        .overlay(bellRingOverlay)
         .overlay(achievementOverlay)
         .preferredColorScheme(.dark)
         .onAppear { setupTacoNotifications() }
@@ -164,6 +188,16 @@ struct MainTabView: View {
                 viewModel.chalkTossComplete()
             }
             .zIndex(999)
+        }
+    }
+
+    @ViewBuilder
+    private var bellRingOverlay: some View {
+        if viewModel.showingBellRing {
+            BellRingView {
+                viewModel.bellRingComplete()
+            }
+            .zIndex(1001)
         }
     }
 

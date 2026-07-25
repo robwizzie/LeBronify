@@ -12,10 +12,9 @@ struct QueueView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var isEditing = false
 
-    // LeBronify dark palette
-    private let bgColor = Color(red: 0.07, green: 0.07, blue: 0.07)
-    private let cardColor = Color(red: 0.11, green: 0.11, blue: 0.11)
-    private let accentYellow = Color.yellow
+    private let bgColor = Theme.background
+    private let cardColor = Theme.surface
+    private let accentColor = Theme.accentText
 
     var body: some View {
         NavigationView {
@@ -88,7 +87,7 @@ struct QueueView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("ON THE COURT")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(accentYellow)
+                        .foregroundColor(accentColor)
                         .tracking(1.2)
 
                     Text(song.title)
@@ -112,10 +111,13 @@ struct QueueView: View {
                             .foregroundColor(.white)
                     }
 
-                    Button { viewModel.togglePlayPause() } label: {
+                    Button {
+                        viewModel.togglePlayPause()
+                        Haptics.medium()
+                    } label: {
                         Image(systemName: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                             .font(.system(size: 34))
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.accentText)
                     }
 
                     Button { viewModel.nextSong() } label: {
@@ -233,7 +235,7 @@ struct QueueView: View {
             Spacer()
             Image(systemName: "music.note.list")
                 .font(.system(size: 48))
-                .foregroundColor(.yellow.opacity(0.3))
+                .foregroundColor(Theme.royal.opacity(0.5))
 
             Text("The King's queue is empty")
                 .font(.system(size: 17, weight: .medium))
@@ -300,12 +302,12 @@ struct QueueView: View {
             VStack(spacing: 5) {
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundColor(isActive ? accentYellow : .white.opacity(disabled ? 0.2 : 0.6))
+                    .foregroundColor(isActive ? accentColor : .white.opacity(disabled ? 0.2 : 0.6))
                     .frame(height: 26)
 
                 Text(label)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(isActive ? accentYellow : .white.opacity(disabled ? 0.2 : 0.4))
+                    .foregroundColor(isActive ? accentColor : .white.opacity(disabled ? 0.2 : 0.4))
             }
             .frame(maxWidth: .infinity)
         }
